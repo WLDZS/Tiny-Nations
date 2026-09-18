@@ -1,0 +1,296 @@
+{
+  "title": "WoW，魔法厨房｜小规模视听预研",
+  "version": 1,
+  "concept_status": "ImageGen visual targets only. No Unity renderer implementation claimed.",
+  "camera": {
+    "projection": "orthographic",
+    "pitch_degrees": 50,
+    "yaw_degrees": 45,
+    "rotation_locked": true
+  },
+  "pixel_scale": {
+    "chef_canvas": [
+      64,
+      64
+    ],
+    "chef_body_height": 50,
+    "chef_ppu": 32,
+    "small_sprite_canvas": [
+      32,
+      32
+    ],
+    "preview_canvas": [
+      640,
+      360
+    ]
+  },
+  "chef": {
+    "status": "cleaned pixel blockout, animation and turnaround still need art cleanup",
+    "sheet": "sprites/chef_all.png",
+    "frames": [
+      {
+        "name": "idle_south",
+        "rect_top_left": [
+          0,
+          0,
+          64,
+          64
+        ],
+        "pivot_top_left_pixels": [
+          32,
+          58
+        ],
+        "unity_pivot_normalized": [
+          0.5,
+          0.09375
+        ],
+        "duration_ms": 120
+      },
+      {
+        "name": "idle_east",
+        "rect_top_left": [
+          64,
+          0,
+          64,
+          64
+        ],
+        "pivot_top_left_pixels": [
+          32,
+          58
+        ],
+        "unity_pivot_normalized": [
+          0.5,
+          0.09375
+        ],
+        "duration_ms": 120
+      },
+      {
+        "name": "idle_north",
+        "rect_top_left": [
+          128,
+          0,
+          64,
+          64
+        ],
+        "pivot_top_left_pixels": [
+          32,
+          58
+        ],
+        "unity_pivot_normalized": [
+          0.5,
+          0.09375
+        ],
+        "duration_ms": 120
+      },
+      {
+        "name": "idle_west",
+        "rect_top_left": [
+          192,
+          0,
+          64,
+          64
+        ],
+        "pivot_top_left_pixels": [
+          32,
+          58
+        ],
+        "unity_pivot_normalized": [
+          0.5,
+          0.09375
+        ],
+        "duration_ms": 120
+      },
+      {
+        "name": "walk_east_1",
+        "rect_top_left": [
+          256,
+          0,
+          64,
+          64
+        ],
+        "pivot_top_left_pixels": [
+          32,
+          58
+        ],
+        "unity_pivot_normalized": [
+          0.5,
+          0.09375
+        ],
+        "duration_ms": 120
+      },
+      {
+        "name": "walk_east_2",
+        "rect_top_left": [
+          320,
+          0,
+          64,
+          64
+        ],
+        "pivot_top_left_pixels": [
+          32,
+          58
+        ],
+        "unity_pivot_normalized": [
+          0.5,
+          0.09375
+        ],
+        "duration_ms": 120
+      },
+      {
+        "name": "walk_east_3",
+        "rect_top_left": [
+          384,
+          0,
+          64,
+          64
+        ],
+        "pivot_top_left_pixels": [
+          32,
+          58
+        ],
+        "unity_pivot_normalized": [
+          0.5,
+          0.09375
+        ],
+        "duration_ms": 120
+      },
+      {
+        "name": "walk_east_4",
+        "rect_top_left": [
+          448,
+          0,
+          64,
+          64
+        ],
+        "pivot_top_left_pixels": [
+          32,
+          58
+        ],
+        "unity_pivot_normalized": [
+          0.5,
+          0.09375
+        ],
+        "duration_ms": 120
+      },
+      {
+        "name": "cast_east_1",
+        "rect_top_left": [
+          512,
+          0,
+          64,
+          64
+        ],
+        "pivot_top_left_pixels": [
+          32,
+          58
+        ],
+        "unity_pivot_normalized": [
+          0.5,
+          0.09375
+        ],
+        "duration_ms": 140
+      },
+      {
+        "name": "cast_east_2",
+        "rect_top_left": [
+          576,
+          0,
+          64,
+          64
+        ],
+        "pivot_top_left_pixels": [
+          32,
+          58
+        ],
+        "unity_pivot_normalized": [
+          0.5,
+          0.09375
+        ],
+        "duration_ms": 100
+      },
+      {
+        "name": "cast_east_3",
+        "rect_top_left": [
+          640,
+          0,
+          64,
+          64
+        ],
+        "pivot_top_left_pixels": [
+          32,
+          58
+        ],
+        "unity_pivot_normalized": [
+          0.5,
+          0.09375
+        ],
+        "duration_ms": 180
+      }
+    ],
+    "direction_definition": "screen-facing south/east/north/west. Map world input to screen facing for fixed camera."
+  },
+  "slime": {
+    "path": "sprites/slime_idle.png",
+    "pivot": [
+      0.5,
+      0.125
+    ],
+    "ppu": 32,
+    "body_alpha": 210
+  },
+  "food": {
+    "paths": [
+      "sprites/bread_raw.png",
+      "sprites/bread_baked.png",
+      "sprites/bread_burnt.png"
+    ],
+    "pivot": [
+      0.5,
+      0.1875
+    ],
+    "ppu": 32
+  },
+  "fx": {
+    "paths": [
+      "sprites/fire_normal.png",
+      "sprites/fire_accident.png",
+      "sprites/ice_normal.png",
+      "sprites/ice_accident.png"
+    ],
+    "pivot": [
+      0.5,
+      0.09375
+    ],
+    "ppu": 32
+  },
+  "modules": {
+    "floor_tile": {
+      "vertices": 8,
+      "triangles": 12,
+      "pivot": "bottom center, y=0",
+      "units": "meters",
+      "separate_boxes": 1
+    },
+    "wood_counter": {
+      "vertices": 32,
+      "triangles": 48,
+      "pivot": "bottom center, y=0",
+      "units": "meters",
+      "separate_boxes": 4
+    },
+    "serving_hatch": {
+      "vertices": 48,
+      "triangles": 72,
+      "pivot": "bottom center, y=0",
+      "units": "meters",
+      "separate_boxes": 6
+    }
+  },
+  "pipeline": "ImageGen references; Aseprite cleanup, pixel sampling and layered action blockouts; procedural OBJ meshes; local score and audio synthesis.",
+  "limitations": [
+    "No Unity import or Play Mode verification",
+    "No human repeated-listening fatigue approval",
+    "Not a complete gameplay package",
+    "Animation is a reusable-source blockout, not finished hand-drawn animation"
+  ]
+}

@@ -38,3 +38,45 @@ MonoBehaviour:
         FilterRuleName: CollectAll
         AssetTags: 
         UserData: 
+      - CollectPath: Assets/GameAsset/UI/MainMenu/Prefabs
+        CollectorGUID: eca9e60806d82f941a664abb401629f1
+        CollectorType: 0
+        AddressRuleName: AddressByFileName
+        PackRuleName: PackDirectory
+        FilterRuleName: CollectAll
+        AssetTags: 
+        UserData: 
+    - GroupName: Scenes
+      GroupDesc: "\u6E38\u620F\u573A\u666F"
+      AssetTags: 
+      ActiveRuleName: EnableGroup
+      Collectors:
+      - CollectPath: Assets/GameAsset/Scene
+        CollectorGUID: ab069a94e50dcae4ab215ed60ccee101
+        CollectorType: 0
+        AddressRuleName: AddressByFileName
+        PackRuleName: PackDirectory
+        FilterRuleName: CollectAll
+        AssetTags: 
+        UserData: 
+    - GroupName: Units
+      GroupDesc: Runtime unit prefabs and definitions
+      AssetTags: 
+      ActiveRuleName: EnableGroup
+      Collectors:
+      - CollectPath: Assets/GameAsset/Units
+        CollectorGUID: 79c1c9c161234e90b9b6265be5532345
+        CollectorType: 0
+        AddressRuleName: AddressByFileName
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectPrefab
+        AssetTags: UnitPrefab
+        UserData: 
+      - CollectPath: Assets/GameAsset/Units/Definitions
+        CollectorGUID: 1b7641dd26114cf5bc365c0a60b45a3c
+        CollectorType: 0
+        AddressRuleName: AddressByFileName
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: UnitDefinition
+        UserData: 

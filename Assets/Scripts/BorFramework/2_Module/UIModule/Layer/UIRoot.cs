@@ -13,6 +13,16 @@ namespace BorFramework
             if (_layers.Count > 0)
                 return;
 
+            var canvas = gameObject.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+
+            var scaler = gameObject.AddComponent<UnityEngine.UI.CanvasScaler>();
+            scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+            scaler.matchWidthOrHeight = 0.5f;
+
+            gameObject.AddComponent<UnityEngine.UI.GraphicRaycaster>();
+
             CreateLayer(EUILayer.World);
             CreateLayer(EUILayer.Screen);
             CreateLayer(EUILayer.Window);
@@ -53,9 +63,14 @@ namespace BorFramework
 
         private static Transform CreateChild(string childName, Transform parent)
         {
-            var child = new GameObject(childName);
-            child.transform.SetParent(parent, false);
-            return child.transform;
+            var child = new GameObject(childName, typeof(RectTransform));
+            var rectTransform = child.GetComponent<RectTransform>();
+            rectTransform.SetParent(parent, false);
+            rectTransform.anchorMin = Vector2.zero;
+            rectTransform.anchorMax = Vector2.one;
+            rectTransform.offsetMin = Vector2.zero;
+            rectTransform.offsetMax = Vector2.zero;
+            return rectTransform;
         }
     }
 }

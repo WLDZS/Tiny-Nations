@@ -1,0 +1,467 @@
+fileFormatVersion: 2
+guid: 1d709805ee3617443be04e8de8801a2c
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -2375952182348919886
+    second: ShamanTransformationSpell_0
+  - first:
+      213: -170850890339099320
+    second: ShamanTransformationSpell_1
+  - first:
+      213: -3738264983106072629
+    second: ShamanTransformationSpell_2
+  - first:
+      213: 8134164441572510403
+    second: ShamanTransformationSpell_3
+  - first:
+      213: 8667361945446255507
+    second: ShamanTransformationSpell_4
+  - first:
+      213: 3242653043283870176
+    second: ShamanTransformationSpell_5
+  - first:
+      213: 4792493581282840512
+    second: ShamanTransformationSpell_6
+  - first:
+      213: -1391727379009232598
+    second: ShamanTransformationSpell_7
+  - first:
+      213: -1052788655248662121
+    second: ShamanTransformationSpell_8
+  - first:
+      213: -775635935985743461
+    second: ShamanTransformationSpell_9
+  - first:
+      213: 7828290294158922240
+    second: ShamanTransformationSpell_10
+  - first:
+      213: -7336151157917738022
+    second: ShamanTransformationSpell_11
+  - first:
+      213: -8009219051238144693
+    second: ShamanTransformationSpell_12
+  - first:
+      213: 6121445113096054094
+    second: ShamanTransformationSpell_13
+  - first:
+      213: 2225983713802782758
+    second: ShamanTransformationSpell_14
+  - first:
+      213: -2955754785968813064
+    second: ShamanTransformationSpell_15
+  - first:
+      213: -5812817825195152562
+    second: ShamanTransformationSpell_16
+  - first:
+      213: -6338823474278090772
+    second: ShamanTransformationSpell_17
+  - first:
+      213: -1778723855584848087
+    second: ShamanTransformationSpell_18
+  - first:
+      213: 7365623358202564503
+    second: ShamanTransformationSpell_19
+  - first:
+      213: -5655982310610690019
+    second: ShamanTransformationSpell_20
+  - first:
+      213: 1348222967693248755
+    second: ShamanTransformationSpell_21
+  - first:
+      213: 5716457877881761799
+    second: ShamanTransformationSpell_22
+  - first:
+      213: 8407441711393842404
+    second: ShamanTransformationSpell_23
+  - first:
+      213: 2668483074868485603
+    second: ShamanTransformationSpell_24
+  - first:
+      213: 1353045525081968859
+    second: ShamanTransformationSpell_25
+  - first:
+      213: 3864851542736783600
+    second: ShamanTransformationSpell_26
+  - first:
+      213: -3668020294543017
+    second: ShamanTransformationSpell_27
+  - first:
+      213: -3404813532065413735
+    second: ShamanTransformationSpell_28
+  - first:
+      213: 4090546104305361353
+    second: ShamanTransformationSpell_29
+  - first:
+      213: -2938524042777241407
+    second: ShamanTransformationSpell_30
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: ShamanTransformationSpell_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2bb47c7141ce60fd0800000000000000
+      internalID: -2375952182348919886
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ShamanTransformationSpell_1
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 84d57cb350401adf0800000000000000
+      internalID: -170850890339099320
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ShamanTransformationSpell_2
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bcf4ea5ddc30f1cc0800000000000000
+      internalID: -3738264983106072629
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ShamanTransformationSpell_3
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3ca0b84867b52e070800000000000000
+      internalID: 8134164441572510403
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ShamanTransformationSpell_4
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 39b001a84c7a84870800000000000000
+      internalID: 8667361945446255507
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ShamanTransformationSpell_5
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0e146c633c7300d20800000000000000
+      internalID: 3242653043283870176
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ShamanTransformationSpell_6
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0cf04bc358b528240800000000000000
+      internalID: 4792493581282840512
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ShamanTransformationSpell_7
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a2128fd82579face0800000000000000
+      internalID: -1391727379009232598
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ShamanTransformationSpell_8
+      rect:
+        serializedVersion: 2
+        x: 1536
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 791a754cb4eb361f0800000000000000
+      internalID: -1052788655248662121
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ShamanTransformationSpell_9
+      rect:
+        serializedVersion: 2
+        x: 1728
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b99ca88c9336c35f0800000000000000
+      internalID: -775635935985743461
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ShamanTransformationSpell_10
+      rect:
+        serializedVersion: 2
+        x: 1920
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0021bf5eb8ca3ac60800000000000000
+      internalID: 7828290294158922240
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: e09f6b1ad41687143b421cf43f17d6ea
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":11.0,"y":1.0},"gridSpriteSize":{"x":192.0,"y":192.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
+    nameFileIdTable:
+      ShamanTransformationSpell_0: -2375952182348919886
+      ShamanTransformationSpell_1: -170850890339099320
+      ShamanTransformationSpell_10: 7828290294158922240
+      ShamanTransformationSpell_2: -3738264983106072629
+      ShamanTransformationSpell_3: 8134164441572510403
+      ShamanTransformationSpell_4: 8667361945446255507
+      ShamanTransformationSpell_5: 3242653043283870176
+      ShamanTransformationSpell_6: 4792493581282840512
+      ShamanTransformationSpell_7: -1391727379009232598
+      ShamanTransformationSpell_8: -1052788655248662121
+      ShamanTransformationSpell_9: -775635935985743461
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

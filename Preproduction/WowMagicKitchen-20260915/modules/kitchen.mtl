@@ -1,0 +1,31 @@
+newmtl ceramic
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 1
+map_Kd ceramic_64.png
+
+newmtl wood
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 1
+map_Kd wood_64.png
+
+newmtl terracotta
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 1
+map_Kd terracotta_64.png
+
+newmtl sage
+Ka 0.2 0.2 0.2
+Kd 1 1 1
+Ks 0 0 0
+d 1
+illum 1
+map_Kd sage_64.png

@@ -1,28 +1,34 @@
+using System;
 using Cysharp.Threading.Tasks;
 
 namespace BorFramework
 {
     public interface IUIModule : IModule
     {
-        public void Register<T>(T element) where T : class, IUIElement;
+        void Register<TView, TViewModel>(
+            string address,
+            EUILayer layer,
+            Func<TViewModel> viewModelFactory,
+            EUISubLayer subLayer = EUISubLayer.Layer1)
+            where TView : UIView<TViewModel>
+            where TViewModel : UIViewModelBase;
 
-        public UniTask<T> OpenAsync<T>() where T : class, IUIElement;
+        UniTask<TView> OpenAsync<TView>() where TView : UIViewBase;
 
-        public UniTask<T> PushScreenAsync<T>() where T : UIScreenBase;
+        UniTask<TView> PushScreenAsync<TView>() where TView : UIViewBase;
 
-        public UniTask<T> OpenWindowAsync<T>() where T : UIWindowBase;
+        UniTask<TView> OpenWindowAsync<TView>() where TView : UIViewBase;
 
-        public void Close<T>() where T : class, IUIElement;
+        void Close<TView>() where TView : UIViewBase;
 
-        public void Destroy<T>() where T : class, IUIElement;
+        void Destroy<TView>() where TView : UIViewBase;
 
-        public bool TryGet<T>(out T element)
-            where T : class, IUIElement;
+        bool TryGet<TView>(out TView view) where TView : UIViewBase;
 
-        public  bool IsOpen<T>() where T : class, IUIElement;
+        bool IsOpen<TView>() where TView : UIViewBase;
 
-        public bool PopScreen();
+        bool PopScreen();
 
-        public void Back();
+        void Back();
     }
 }

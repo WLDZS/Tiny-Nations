@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using YooAsset;
@@ -11,7 +12,6 @@ namespace BorFramework
 
         private readonly string _packageName;
         private ResourcePackage _package;
-        private UniTask _initializeTask;
         public string PackageName => _packageName;
         public EResourceState State { get; private set; } = EResourceState.None;
 
@@ -28,7 +28,7 @@ namespace BorFramework
             State = EResourceState.Initializing;
             YooAssets.Initialize(new YooAssetLogger());
             _package = YooAssets.CreatePackage(_packageName);
-            _initializeTask = InitializePackageAsync();
+            InitializePackageAsync().Forget();
         }
 
         public void Start()
@@ -63,7 +63,9 @@ namespace BorFramework
                 return null;
             }
 
-            await _initializeTask;
+            if (State == EResourceState.Initializing)
+                await UniTask.WaitUntil(() => State != EResourceState.Initializing);
+
             if (State != EResourceState.Ready || _package == null)
                 return null;
 
@@ -83,6 +85,54 @@ namespace BorFramework
 
             var handle = _package.LoadAssetSync<T>(address);
             return CreateLease<T>(address, handle);
+        }
+
+        public async UniTask<IReadOnlyList<string>> GetAssetAddressesAsync(string tag)
+        {
+            if (string.IsNullOrWhiteSpace(tag)
+                || State == EResourceState.None
+                || State == EResourceState.Disposed)
+            {
+                return System.Array.Empty<string>();
+            }
+
+            if (State == EResourceState.Initializing)
+                await UniTask.WaitUntil(() => State != EResourceState.Initializing);
+
+            if (State != EResourceState.Ready || _package == null)
+                return System.Array.Empty<string>();
+
+            AssetInfo[] assetInfos = _package.GetAssetInfos(tag);
+            var addresses = new List<string>(assetInfos.Length);
+
+            for (int i = 0; i < assetInfos.Length; i++)
+            {
+                string address = assetInfos[i].Address;
+                if (!string.IsNullOrWhiteSpace(address))
+                    addresses.Add(address);
+            }
+
+            addresses.Sort(System.StringComparer.Ordinal);
+            return addresses;
+        }
+
+        public async UniTask<IInstanceLease> InstantiateAsync(
+            string address,
+            Vector3 position,
+            Quaternion rotation,
+            Transform parent)
+        {
+            IAssetLease<GameObject> assetLease = await LoadAssetAsync<GameObject>(address);
+            if (assetLease == null)
+                return null;
+
+            GameObject instance = Object.Instantiate(assetLease.Asset, position, rotation, parent);
+            if (instance != null)
+                return new InstanceLease(address, instance, assetLease);
+
+            assetLease.Dispose();
+            Debug.LogError($"预制体实例化失败。Address: {address}");
+            return null;
         }
 
         private IAssetLease<T> CreateLease<T>(string address, AssetHandle handle)

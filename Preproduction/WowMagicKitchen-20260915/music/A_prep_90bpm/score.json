@@ -1,0 +1,1060 @@
+{
+  "name": "A_prep_90bpm",
+  "bpm": 90,
+  "meter": "4/4",
+  "key": "G major",
+  "bars": 16,
+  "sample_rate": 48000,
+  "samples": 2048000,
+  "loop_start_sample": 0,
+  "loop_end_exclusive": 2048000,
+  "events": [
+    {
+      "part": "plucked_strings",
+      "beat": 0,
+      "note": 43,
+      "duration_beats": 1.5,
+      "velocity": 0.46
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 2,
+      "note": 50,
+      "duration_beats": 1.25,
+      "velocity": 0.39
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 0.75,
+      "note": 55,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 1.5,
+      "note": 59,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 2.5,
+      "note": 62,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 3.25,
+      "note": 59,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "woodwind",
+      "beat": 0.9,
+      "note": 76,
+      "duration_beats": 0.38,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 1.5,
+      "note": 79,
+      "duration_beats": 0.6649999999999999,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 2.5,
+      "note": 78,
+      "duration_beats": 0.38,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 3.1,
+      "note": 76,
+      "duration_beats": 0.57,
+      "velocity": 0.28
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 4,
+      "note": 40,
+      "duration_beats": 1.5,
+      "velocity": 0.6
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 6,
+      "note": 47,
+      "duration_beats": 1.25,
+      "velocity": 0.39
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 4.75,
+      "note": 55,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 5.5,
+      "note": 59,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 6.5,
+      "note": 64,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 7.25,
+      "note": 59,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "woodwind",
+      "beat": 4.5,
+      "note": 74,
+      "duration_beats": 0.6649999999999999,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 5.5,
+      "note": 71,
+      "duration_beats": 0.6174999999999999,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 6.5,
+      "note": 67,
+      "duration_beats": 0.8075,
+      "velocity": 0.28
+    },
+    {
+      "part": "celesta",
+      "beat": 7.5,
+      "note": 83,
+      "duration_beats": 0.3,
+      "velocity": 0.1
+    },
+    {
+      "part": "wood_percussion",
+      "beat": 6,
+      "note": 72,
+      "duration_beats": 0.04,
+      "velocity": 0.045
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 8,
+      "note": 36,
+      "duration_beats": 1.5,
+      "velocity": 0.6
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 10,
+      "note": 43,
+      "duration_beats": 1.25,
+      "velocity": 0.39
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 8.75,
+      "note": 55,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 9.5,
+      "note": 60,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 10.5,
+      "note": 64,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 11.25,
+      "note": 60,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 12,
+      "note": 38,
+      "duration_beats": 1.5,
+      "velocity": 0.6
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 14,
+      "note": 45,
+      "duration_beats": 1.25,
+      "velocity": 0.39
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 12.75,
+      "note": 54,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 13.5,
+      "note": 57,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 14.5,
+      "note": 62,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 15.25,
+      "note": 57,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "woodwind",
+      "beat": 13,
+      "note": 69,
+      "duration_beats": 0.57,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 14,
+      "note": 74,
+      "duration_beats": 0.475,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 15,
+      "note": 78,
+      "duration_beats": 0.57,
+      "velocity": 0.28
+    },
+    {
+      "part": "celesta",
+      "beat": 15.5,
+      "note": 81,
+      "duration_beats": 0.3,
+      "velocity": 0.1
+    },
+    {
+      "part": "wood_percussion",
+      "beat": 14,
+      "note": 72,
+      "duration_beats": 0.04,
+      "velocity": 0.045
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 16,
+      "note": 43,
+      "duration_beats": 1.5,
+      "velocity": 0.6
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 18,
+      "note": 50,
+      "duration_beats": 1.25,
+      "velocity": 0.39
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 16.75,
+      "note": 55,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 17.5,
+      "note": 59,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 18.5,
+      "note": 62,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 19.25,
+      "note": 59,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "woodwind",
+      "beat": 16,
+      "note": 74,
+      "duration_beats": 0.6649999999999999,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 16.9,
+      "note": 76,
+      "duration_beats": 0.38,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 17.5,
+      "note": 79,
+      "duration_beats": 0.6649999999999999,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 18.5,
+      "note": 78,
+      "duration_beats": 0.38,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 19.1,
+      "note": 76,
+      "duration_beats": 0.57,
+      "velocity": 0.28
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 20,
+      "note": 47,
+      "duration_beats": 1.5,
+      "velocity": 0.6
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 22,
+      "note": 54,
+      "duration_beats": 1.25,
+      "velocity": 0.39
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 20.75,
+      "note": 54,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 21.5,
+      "note": 59,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 22.5,
+      "note": 62,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 23.25,
+      "note": 59,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "wood_percussion",
+      "beat": 22,
+      "note": 72,
+      "duration_beats": 0.04,
+      "velocity": 0.045
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 24,
+      "note": 36,
+      "duration_beats": 1.5,
+      "velocity": 0.6
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 26,
+      "note": 43,
+      "duration_beats": 1.25,
+      "velocity": 0.39
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 24.75,
+      "note": 55,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 25.5,
+      "note": 60,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 26.5,
+      "note": 64,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 27.25,
+      "note": 60,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "woodwind",
+      "beat": 24.5,
+      "note": 72,
+      "duration_beats": 0.57,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 25.5,
+      "note": 76,
+      "duration_beats": 0.57,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 26.5,
+      "note": 79,
+      "duration_beats": 0.6649999999999999,
+      "velocity": 0.28
+    },
+    {
+      "part": "celesta",
+      "beat": 27.5,
+      "note": 84,
+      "duration_beats": 0.3,
+      "velocity": 0.1
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 28,
+      "note": 38,
+      "duration_beats": 1.5,
+      "velocity": 0.6
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 30,
+      "note": 45,
+      "duration_beats": 1.25,
+      "velocity": 0.39
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 28.75,
+      "note": 54,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 29.5,
+      "note": 57,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 30.5,
+      "note": 62,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 31.25,
+      "note": 57,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "woodwind",
+      "beat": 28.5,
+      "note": 78,
+      "duration_beats": 0.5225,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 29.5,
+      "note": 74,
+      "duration_beats": 0.76,
+      "velocity": 0.28
+    },
+    {
+      "part": "wood_percussion",
+      "beat": 30,
+      "note": 72,
+      "duration_beats": 0.04,
+      "velocity": 0.045
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 32,
+      "note": 40,
+      "duration_beats": 1.5,
+      "velocity": 0.6
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 34,
+      "note": 47,
+      "duration_beats": 1.25,
+      "velocity": 0.39
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 32.75,
+      "note": 55,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 33.5,
+      "note": 59,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 34.5,
+      "note": 64,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 35.25,
+      "note": 59,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "woodwind",
+      "beat": 32.5,
+      "note": 76,
+      "duration_beats": 0.57,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 33.5,
+      "note": 79,
+      "duration_beats": 0.5225,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 34.5,
+      "note": 78,
+      "duration_beats": 0.7124999999999999,
+      "velocity": 0.28
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 36,
+      "note": 36,
+      "duration_beats": 1.5,
+      "velocity": 0.6
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 38,
+      "note": 43,
+      "duration_beats": 1.25,
+      "velocity": 0.39
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 36.75,
+      "note": 55,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 37.5,
+      "note": 60,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 38.5,
+      "note": 64,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 39.25,
+      "note": 60,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "celesta",
+      "beat": 39.5,
+      "note": 84,
+      "duration_beats": 0.3,
+      "velocity": 0.1
+    },
+    {
+      "part": "wood_percussion",
+      "beat": 38,
+      "note": 72,
+      "duration_beats": 0.04,
+      "velocity": 0.045
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 40,
+      "note": 43,
+      "duration_beats": 1.5,
+      "velocity": 0.6
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 42,
+      "note": 50,
+      "duration_beats": 1.25,
+      "velocity": 0.39
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 40.75,
+      "note": 55,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 41.5,
+      "note": 59,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 42.5,
+      "note": 62,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 43.25,
+      "note": 59,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "woodwind",
+      "beat": 40.5,
+      "note": 71,
+      "duration_beats": 0.57,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 41.5,
+      "note": 74,
+      "duration_beats": 0.57,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 42.5,
+      "note": 79,
+      "duration_beats": 0.76,
+      "velocity": 0.28
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 44,
+      "note": 38,
+      "duration_beats": 1.5,
+      "velocity": 0.6
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 46,
+      "note": 45,
+      "duration_beats": 1.25,
+      "velocity": 0.39
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 44.75,
+      "note": 54,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 45.5,
+      "note": 57,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 46.5,
+      "note": 62,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 47.25,
+      "note": 57,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "woodwind",
+      "beat": 45,
+      "note": 78,
+      "duration_beats": 0.57,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 46,
+      "note": 74,
+      "duration_beats": 0.76,
+      "velocity": 0.28
+    },
+    {
+      "part": "celesta",
+      "beat": 47.5,
+      "note": 81,
+      "duration_beats": 0.3,
+      "velocity": 0.1
+    },
+    {
+      "part": "wood_percussion",
+      "beat": 46,
+      "note": 72,
+      "duration_beats": 0.04,
+      "velocity": 0.045
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 48,
+      "note": 36,
+      "duration_beats": 1.5,
+      "velocity": 0.6
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 50,
+      "note": 43,
+      "duration_beats": 1.25,
+      "velocity": 0.39
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 48.75,
+      "note": 55,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 49.5,
+      "note": 60,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 50.5,
+      "note": 64,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 51.25,
+      "note": 60,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 52,
+      "note": 43,
+      "duration_beats": 1.5,
+      "velocity": 0.6
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 54,
+      "note": 50,
+      "duration_beats": 1.25,
+      "velocity": 0.39
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 52.75,
+      "note": 55,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 53.5,
+      "note": 59,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 54.5,
+      "note": 62,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 55.25,
+      "note": 59,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "woodwind",
+      "beat": 52.5,
+      "note": 71,
+      "duration_beats": 0.57,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 53.5,
+      "note": 74,
+      "duration_beats": 0.57,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 54.5,
+      "note": 79,
+      "duration_beats": 0.76,
+      "velocity": 0.28
+    },
+    {
+      "part": "wood_percussion",
+      "beat": 54,
+      "note": 72,
+      "duration_beats": 0.04,
+      "velocity": 0.045
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 56,
+      "note": 45,
+      "duration_beats": 1.5,
+      "velocity": 0.6
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 58,
+      "note": 52,
+      "duration_beats": 1.25,
+      "velocity": 0.39
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 56.75,
+      "note": 57,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 57.5,
+      "note": 60,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 58.5,
+      "note": 64,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 59.25,
+      "note": 60,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "woodwind",
+      "beat": 57,
+      "note": 76,
+      "duration_beats": 0.57,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 58,
+      "note": 72,
+      "duration_beats": 0.76,
+      "velocity": 0.28
+    },
+    {
+      "part": "celesta",
+      "beat": 59.5,
+      "note": 84,
+      "duration_beats": 0.3,
+      "velocity": 0.1
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 60,
+      "note": 38,
+      "duration_beats": 1.5,
+      "velocity": 0.6
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 62,
+      "note": 45,
+      "duration_beats": 1.25,
+      "velocity": 0.39
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 60.75,
+      "note": 54,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 61.5,
+      "note": 57,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 62.5,
+      "note": 62,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 63.25,
+      "note": 57,
+      "duration_beats": 0.65,
+      "velocity": 0.29
+    },
+    {
+      "part": "woodwind",
+      "beat": 60.5,
+      "note": 69,
+      "duration_beats": 0.5225,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 61.5,
+      "note": 74,
+      "duration_beats": 0.57,
+      "velocity": 0.28
+    },
+    {
+      "part": "woodwind",
+      "beat": 62.5,
+      "note": 78,
+      "duration_beats": 0.6174999999999999,
+      "velocity": 0.28
+    },
+    {
+      "part": "wood_percussion",
+      "beat": 62,
+      "note": 72,
+      "duration_beats": 0.04,
+      "velocity": 0.045
+    },
+    {
+      "part": "woodwind",
+      "beat": 63.5,
+      "note": 74,
+      "duration_beats": 0.98,
+      "velocity": 0.29
+    },
+    {
+      "part": "plucked_strings",
+      "beat": 63.5,
+      "note": 62,
+      "duration_beats": 0.65,
+      "velocity": 0.31
+    }
+  ],
+  "original_theme_midi": [
+    74,
+    76,
+    79,
+    78,
+    76,
+    74,
+    71,
+    67
+  ],
+  "synthesis": "local original additive/plucked timbres, not recorded instruments"
+}

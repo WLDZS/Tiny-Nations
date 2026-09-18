@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 97c230f82394f433bb3f9d79691909e0
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 352568
+  packageName: Tiny Swords - Enemy Pack
+  packageVersion: 1.0
+  assetPath: Assets/Tiny Swords - Enemy Pack/Enemies/Minotaur/Minotaur Animations/Minotaur_Attack.anim
+  uploadId: 844332

@@ -1,0 +1,117 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WoW，魔法厨房 · 视听试验台</title>
+<style>
+:root{color-scheme:dark;--bg:#211e26;--panel:#302b32;--cream:#f4e5c6;--muted:#bcb0a6;--line:#514650;--aqua:#65c7d1;--red:#b9543e}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--cream);font:15px/1.65 system-ui,"Microsoft YaHei",sans-serif}main{max-width:1220px;margin:auto;padding:44px 28px 70px}header{display:flex;justify-content:space-between;gap:24px;align-items:center}h1{font-size:clamp(28px,4vw,48px);letter-spacing:-1px;line-height:1.15;margin:10px 0 20px}h2{font-size:22px;margin:0 0 8px}h3{font-size:16px;margin:0}p{margin:8px 0;color:var(--muted)}.kicker{color:var(--aqua);font-size:12px;letter-spacing:3px}.pill{border:1px solid var(--line);border-radius:99px;padding:6px 13px;font-size:12px;white-space:nowrap}.lead{max-width:800px}.section{margin-top:34px;padding-top:26px;border-top:1px solid var(--line)}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.spread{justify-content:space-between}.cards{display:grid;grid-template-columns:1fr 1fr;gap:18px}.card{padding:20px;background:var(--panel);border:1px solid var(--line);border-radius:12px}.concept{width:100%;display:block;border-radius:6px}.label{font-size:12px;color:var(--aqua);margin-bottom:8px}.small{font-size:12px}.stageWrap{margin-top:16px;background:#292631;overflow:auto;border:1px solid var(--line);border-radius:10px;text-align:center}canvas{image-rendering:pixelated;max-width:100%;display:block;margin:auto}#stage{width:100%;aspect-ratio:16/9}.controls{margin-top:16px;display:flex;gap:20px;flex-wrap:wrap}label{display:inline-flex;align-items:center;gap:8px;color:var(--muted)}button,select{font:inherit;font-size:13px;background:#413741;color:var(--cream);border:1px solid #66545e;border-radius:6px;padding:7px 12px;cursor:pointer}button:hover,button[aria-pressed=true]{background:#755441;border-color:#b58053}button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--aqua);outline-offset:3px}input[type=range]{accent-color:var(--aqua);max-width:140px}.sprite-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.sprite-card{background:#34303c;border:1px solid var(--line);border-radius:9px;padding:14px;min-width:0}.sprite-card img{image-rendering:pixelated;width:100%;object-fit:contain;height:128px}.sprite-card p{font-size:12px}.wide{grid-column:span 2}.audit{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.metric{background:#302b32;border-radius:9px;padding:17px}.metric strong{font-size:24px;display:block;color:var(--aqua)}.music button{margin:8px 6px 0 0}.music-status{min-height:26px;font-size:12px}.warning{color:#ebbb90}.foot{margin-top:34px;font-size:12px;color:var(--muted)}a{color:#92d6d1}.toggle{cursor:pointer}#breadtest{width:384px;height:96px;max-width:100%}.chip{width:32px;height:32px;border-radius:50%;border:1px solid #ffffff33}.palette{display:flex;gap:8px}.key{background:#15131b;padding:2px 6px;border-radius:4px}progress{accent-color:var(--aqua);width:100%;height:7px}#errors{color:#ff9b86} @media(max-width:700px){main{padding:25px 16px}.cards,.audit{grid-template-columns:1fr}.sprite-grid{grid-template-columns:1fr 1fr}header{align-items:flex-start}.pill{display:none}.controls{gap:10px}.card{padding:14px}}
+</style>
+<main>
+<header><div><div class="kicker">LOOK · LISTEN · REPEAT / 01</div><h1>WoW，魔法厨房</h1><p class="lead">像素厨师，小小厨房。用一包真实素材，检查清晰度、动作一致性与音乐循环。</p></div><span class="pill">视听预研 · 2026.09.15</span></header>
+<div class="row spread" style="margin-top:20px"><div class="palette" id="palette"></div><span class="small">B 方向试制 / 正交俯角 50° / 64 × 64 厨师草稿</span></div>
+
+<section class="section"><h2>01 / 同一间厨房，两种目标</h2><p>同布局、同角色与主要道具位置的生成对照。下图是视觉目标；光照、相机与物件并非严格数值锁定的渲染结果。</p>
+<div class="cards"><div class="card"><div class="label">A · 纯 2D 斜俯视像素</div><img class="concept" id="conceptA" alt="相同厨房的纯2D像素目标图"><p class="small">整体语言统一，环境像素纹理较多；不是已完成的模块场景。</p></div><div class="card"><div class="label">B · 像素角色 + 简单立体厨房</div><img class="concept" id="conceptB" alt="相同厨房的2.5D目标图"><p class="small">环境表面更安静，角色较突出。默认沿此方向制作少量素材。</p></div></div></section>
+
+<section class="section"><div class="row spread"><div><h2>02 / 游戏尺寸试验台</h2><p>用导出的几何数据、材质与精灵绘制的浏览器预览。不是 Unity 截图，也不代表深度排序已在引擎中实现。</p></div><button id="pause" aria-pressed="false">暂停动画</button></div>
+<div class="stageWrap"><canvas id="stage" width="640" height="360" aria-label="可交互的正交厨房素材预览"></canvas></div>
+<div class="controls">
+<label>动作 <select id="action"><option value="walk">行走 · 4 帧</option><option value="idle">站立 · 四方向</option><option value="cast">施法 · 3 帧</option></select></label>
+<label>朝向 <select id="direction"><option value="east">东 / 屏幕右</option><option value="south">南 / 屏幕下</option><option value="north">北 / 屏幕上</option><option value="west">西 / 屏幕左</option></select></label>
+<label>魔法 <select id="magic"><option value="none">无</option><option value="fire_normal">火 · 正常</option><option value="fire_accident">火 · 事故</option><option value="ice_normal">冰 · 正常</option><option value="ice_accident">冰 · 事故</option></select></label>
+<label>显示 <select id="scale"><option value="fit">自适应</option><option value="native">逻辑 1×</option><option value="double">整数 2×</option></select></label>
+<label><input id="gray" type="checkbox">灰度检查</label><label><input id="crowd" type="checkbox">四人占位压力</label>
+</div><p class="small" id="sceneNote">角色、食物均为原尺寸采样。行走与施法只制作了朝右方向；四人模式复用同一个母版，尚无玩家区分方案。</p>
+<p class="small">史莱姆：同一张精灵，程序呼吸和弹跳；火苗：小幅程序形变。场景使用地砖、柜台、出餐口三个网格模块，不含完整概念图里的炉灶和装饰。</p>
+</section>
+
+<section class="section"><h2>03 / 单体素材与清理状态</h2><p>下列 PNG 均有真实 Alpha。厨师的四向与动作仍属待美术清理草稿，不能据此声称 AI 已稳定完成动画生产。</p>
+<div class="sprite-grid">
+<div class="sprite-card wide"><h3>厨师 · 四方向</h3><img data-asset="sprites/chef_directions.png" alt="厨师四方向精灵"><p>4 × 64² / 脚底锚点 (32,58) / 相同帽子、围裙和服装</p></div>
+<div class="sprite-card"><h3>水史莱姆</h3><img data-asset="sprites/slime_idle.png" alt="透明水史莱姆"><p>32² / 水体 Alpha 210 / 表情与高光实色</p></div>
+<div class="sprite-card"><h3>面包 · 三态</h3><img data-asset="sprites/bread_states.png" alt="生面团熟面包焦面包"><p>3 × 32² / 切口、冠部与裂纹区分</p></div>
+<div class="sprite-card wide"><h3>朝右行走 / 朝右施法</h3><canvas id="animSheet" width="448" height="128" aria-label="4帧行走与3帧施法草稿"></canvas><p>来自同一侧向源图。头身不重生；局部脚步位移和重绘手臂，仍需修步态和肩部。</p></div>
+<div class="sprite-card"><h3>火 · 正常 / 事故</h3><img data-asset="sprites/fire_states.png" alt="正常火焰与事故火焰"><p>低矮边火 / 两侧高火</p></div>
+<div class="sprite-card"><h3>冰 · 正常 / 事故</h3><img data-asset="sprites/ice_states.png" alt="正常冰缘与失控晶体"><p>薄冰缘 / 高晶体；中心保留透明窗</p></div></div>
+<div class="row" style="margin-top:18px"><canvas id="breadtest" width="128" height="32" aria-label="三种食物的灰度和特效可读性"></canvas><span class="small">上方灰度和魔法开关也会应用在这里。</span></div>
+</section>
+
+<section class="section"><h2>04 / 两段原创循环试作</h2><p>本地编曲与合成音色：拨弦、类单簧管、少量钢片琴、轻木质打击。共用短主题，纯器乐，没有游戏事件音效。</p>
+<div class="cards music">
+<div class="card"><div class="label">A / PREP</div><h3>开门前的暖光</h3><p>90 BPM · 4/4 · 16 小节 · 42.67 秒</p><button data-play="A_prep_90bpm">连续循环</button><button data-three="A_prep_90bpm">完整听三轮</button><button data-seam="A_prep_90bpm">接缝前后 8 秒</button><p class="small">留出木管呼吸空隙，拨弦为主体，适合备店的节奏草案。</p><a class="small" href="music/A_prep_90bpm_loop.wav" download>下载 WAV</a></div>
+<div class="card"><div class="label">B / SERVICE</div><h3>手忙脚乱的好魔法</h3><p>110 BPM · 4/4 · 16 小节 · 34.91 秒</p><button data-play="B_service_110bpm">连续循环</button><button data-three="B_service_110bpm">完整听三轮</button><button data-seam="B_service_110bpm">接缝前后 8 秒</button><p class="small">同主题的短句变奏，增加拨弦密度与木质节奏。</p><a class="small" href="music/B_service_110bpm_loop.wav" download>下载 WAV</a></div>
+</div><div class="row" style="margin-top:16px"><button id="stop">停止音乐</button><label>试听音量 <input id="volume" type="range" min="0" max="1" step=".01" value=".65"></label><span id="musicStatus" class="music-status" role="status">点击播放。切换曲目会停止上一首，不会叠加。</span></div><progress id="musicProgress" max="1" value="0"></progress>
+<p class="small warning">数值检查不能代替听感：已检查循环长度、尾音回绕、削波、采样接缝和短时音量差；真人重复聆听的疲劳感尚未验收。合成木管的真实感也需单独判断。</p>
+</section>
+<section class="section"><h2>05 / 现在验证到了哪里</h2><div class="audit"><div class="metric"><strong>26 PNG</strong><span>尺寸与 Alpha 检查通过；未触及画布边缘</span></div><div class="metric"><strong>3 个模块</strong><span>地砖 12 / 柜台 48 / 出餐口 72 三角面</span></div><div class="metric"><strong>0 削波</strong><span>48 kHz 立体声 PCM16，两首 RMS 均约 −21 dBFS</span></div></div>
+<p>建议继续 B 方向的小规模验证。当前最需要人工投入的是角色方向统一、行走步态与施法肩部；简单几何体和单姿态宠物的维护成本更可控。实际 Unity 导入、遮挡、材质与多人角色识别仍待验证。</p>
+<p><a href="REPORT.md">完整报告与导入步骤</a> · <a href="manifest.json">资源清单与锚点</a> · <a href="qa/asset_metrics.json">素材检查</a> · <a href="qa/audio_metrics.json">音乐检查</a></p></section>
+<p id="errors" role="alert"></p><footer class="foot">ImageGen 设计素材 / Aseprite 清理与分层动作草稿 / 程序网格与本地音频合成。此次为预研交付，未修改游戏逻辑或导入 Unity。</footer>
+</main>
+<script src="pack-data.js"></script><script>
+'use strict';
+const $=id=>document.getElementById(id),imgs={};let ready=false,paused=false,elapsed=0,last=performance.now();
+const colors=['#F4E5C6','#AD713C','#B9543E','#8D9B72','#51415F','#65C7D1'];
+colors.forEach(c=>{const s=document.createElement('span');s.className='chip';s.style.background=c;s.title=c;$('palette').append(s)});
+const imageLoads=Object.entries(PACK.assets).map(([key,src])=>new Promise(resolve=>{let i=new Image();i.onload=()=>resolve();i.src=src;imgs[key]=i}));
+$('conceptA').src=PACK.assets['concepts/concept_A.png'];$('conceptB').src=PACK.assets['concepts/concept_B.png'];
+document.querySelectorAll('[data-asset]').forEach(e=>e.src=PACK.assets[e.dataset.asset]);
+const cv=$('stage'),ctx=cv.getContext('2d'),pitch=50*Math.PI/180,unit=32;
+function project(x,y,z){return [320+(x-z)*Math.SQRT1_2*unit,180+(x+z)*Math.SQRT1_2*Math.sin(pitch)*unit-y*Math.cos(pitch)*unit]}
+function depth(x,y,z){return (x+z)*Math.SQRT1_2*Math.cos(pitch)+y*Math.sin(pitch)}
+const scene=[];
+function addModule(name,x,z,override){PACK.geometry[name].forEach(b=>{scene.push({...b,vertices:b.vertices.map(v=>[v[0]+x,v[1],v[2]+z]),material:override||b.material})})}
+for(let x=-4;x<4;x++)for(let z=-3;z<3;z++)addModule('floor_tile',x+.5,z+.5,(x+z)%2?'ceramic':'terracotta');
+for(let x=-3;x<=-1;x++)addModule('wood_counter',x,-2.5);
+for(let z=-1.5;z<=.5;z++)addModule('wood_counter',-3.5,z);
+addModule('wood_counter',.8,0);addModule('wood_counter',1.8,0);addModule('wood_counter',2.8,0);
+addModule('serving_hatch',1.8,-2.55);
+function renderBox(b){
+ const visible=[];
+ for(const f of b.faces){const world=f.map(i=>b.vertices[i]),p=world.map(v=>project(...v));
+  const cross=(p[1][0]-p[0][0])*(p[2][1]-p[0][1])-(p[1][1]-p[0][1])*(p[2][0]-p[0][0]);
+  if(cross>0)continue;
+  visible.push({world,p,d:world.reduce((s,v)=>s+depth(...v),0)/4});}
+ visible.sort((a,b)=>a.d-b.d);
+ for(const f of visible){const p=f.p;ctx.save();ctx.beginPath();p.forEach((v,i)=>i?ctx.lineTo(...v):ctx.moveTo(...v));ctx.closePath();ctx.clip();
+  ctx.save();ctx.transform((p[1][0]-p[0][0])/64,(p[1][1]-p[0][1])/64,(p[3][0]-p[0][0])/64,(p[3][1]-p[0][1])/64,p[0][0],p[0][1]);ctx.drawImage(imgs['modules/'+b.material+'_64.png'],0,0);ctx.restore();
+  const top=Math.abs(f.world[0][1]-f.world[1][1])<.001&&Math.abs(f.world[0][1]-f.world[2][1])<.001;
+  ctx.fillStyle=top?'rgba(255,234,194,.04)':'rgba(34,24,34,.18)';ctx.fillRect(0,0,640,360);ctx.restore();}
+}
+function sprite(key,x,y,z,w,h,pivotY,flip=false){const p=project(x,y,z);ctx.save();ctx.translate(Math.round(p[0]),Math.round(p[1]));if(flip)ctx.scale(-1,1);ctx.drawImage(imgs['sprites/'+key+'.png'],-w/2,-pivotY,w,h);ctx.restore()}
+function chefKey(){const a=$('action').value;if(a==='idle')return 'chef_idle_'+$('direction').value;if(a==='walk')return 'chef_walk_east_'+(Math.floor(elapsed/.12)%4+1);const t=elapsed%.42;return 'chef_cast_east_'+(t<.14?1:t<.24?2:3)}
+function render(){
+ ctx.imageSmoothingEnabled=false;ctx.fillStyle='#292631';ctx.fillRect(0,0,640,360);ctx.save();ctx.filter=$('gray').checked?'grayscale(1)':'none';
+ const items=[];
+ for(const b of scene){let av=b.vertices.reduce((a,v)=>a.map((n,i)=>n+v[i]/8),[0,0,0]);items.push({d:depth(...av),draw:()=>renderBox(b)})}
+ for(let i=0;i<3;i++){const x=.8+i;items.push({d:depth(x,.90,0)+.3,draw:()=>{sprite('bread_'+['raw','baked','burnt'][i],x,.93,0,32,32,26);if($('magic').value!=='none'){const kind=$('magic').value;let h=kind.startsWith('fire')?32+Math.round(Math.sin(elapsed*12)*1):32;sprite(kind,x,.93,0,32,h,h-3)}}})}
+ const chefs=$('crowd').checked?[[-1,1.1],[.15,1.45],[1.3,1.7],[2.5,1.7]]:[[-1,1.1]];
+ chefs.forEach((p,i)=>items.push({d:depth(p[0],.70,p[1]),draw:()=>sprite(chefKey(),p[0],0,p[1],64,64,58)}));
+ items.push({d:depth(-.3,.3,2.25),draw:()=>{const bounce=Math.max(0,Math.sin(elapsed*2.2));const h=25+Math.round(Math.sin(elapsed*4)*1);sprite('slime_idle',-.3,bounce*.18,2.25,32,h+7,h+3)}});
+ items.sort((a,b)=>a.d-b.d);items.forEach(i=>i.draw());ctx.restore();
+ ctx.fillStyle='#bcb0a6';ctx.font='11px system-ui';ctx.fillText('640 × 360 · 50° 正交 · 模块 / 精灵浏览器试验',16,22);
+ ctx.fillStyle='#65c7d1';ctx.fillText($('crowd').checked?'四人同母版占位：缺少玩家身份区分':'动作草稿：'+$('action').selectedOptions[0].text,16,341);
+ const b=$('breadtest').getContext('2d');b.imageSmoothingEnabled=false;b.fillStyle='#79634e';b.fillRect(0,0,128,32);b.save();b.filter=$('gray').checked?'grayscale(1)':'none';['raw','baked','burnt'].forEach((s,i)=>{b.drawImage(imgs['sprites/bread_'+s+'.png'],8+i*40,0);if($('magic').value!=='none')b.drawImage(imgs['sprites/'+$('magic').value+'.png'],8+i*40,0)});b.restore();
+}
+Promise.all(imageLoads).then(()=>{ready=true;const c=$('animSheet').getContext('2d');c.imageSmoothingEnabled=false;c.drawImage(imgs['sprites/chef_walk_east.png'],0,0);c.drawImage(imgs['sprites/chef_cast_east.png'],0,64);document.body.dataset.ready='true'});
+$('pause').onclick=()=>{paused=!paused;$('pause').textContent=paused?'继续动画':'暂停动画';$('pause').setAttribute('aria-pressed',paused)};
+$('action').onchange=()=>{$('direction').disabled=$('action').value!=='idle'};$('action').onchange();
+$('scale').onchange=()=>{cv.style.width=$('scale').value==='native'?'640px':$('scale').value==='double'?'1280px':'100%';cv.style.maxWidth=$('scale').value==='fit'?'100%':'none'};
+if(matchMedia('(prefers-reduced-motion: reduce)').matches){paused=true;$('pause').textContent='继续动画';$('pause').setAttribute('aria-pressed','true')}
+let audioContext,gainNode,currentSource,currentStart=0,currentDuration=0,currentTitle='',threeMode=false,playSerial=0;const audioCache={};
+function stopMusic(){playSerial++;if(currentSource){currentSource.onended=null;currentSource.stop();currentSource.disconnect();currentSource=null}$('musicStatus').textContent='音乐已停止';$('musicProgress').value=0}
+async function play(name,mode){stopMusic();const request=playSerial;if(!audioContext){audioContext=new AudioContext();gainNode=audioContext.createGain();gainNode.connect(audioContext.destination)}await audioContext.resume();if(request!==playSerial)return;gainNode.gain.value=+$('volume').value;
+ const path=mode==='seam'?'music/'+name+'/seam_audition.wav':'music/'+name+'_loop.wav';$('musicStatus').textContent='载入音乐…';
+ if(!audioCache[path])audioCache[path]=await audioContext.decodeAudioData(await (await fetch(path)).arrayBuffer());
+ if(request!==playSerial)return;
+ const source=audioContext.createBufferSource();source.buffer=audioCache[path];source.connect(gainNode);source.loop=mode!=='seam';source.loopStart=0;source.loopEnd=source.buffer.duration;
+ currentSource=source;currentStart=audioContext.currentTime;currentDuration=source.buffer.duration;currentTitle=name.startsWith('A')?'备店':'营业';threeMode=mode==='three';source.start();if(threeMode)source.stop(currentStart+currentDuration*3);
+ source.onended=()=>{if(currentSource===source){currentSource=null;$('musicStatus').textContent='试听完成；请记录接缝与疲劳感'}};
+ $('musicStatus').textContent=currentTitle+' · '+(mode==='seam'?'接缝在第 4 秒':threeMode?'完整播放三轮':'连续循环');
+}
+document.querySelectorAll('[data-play]').forEach(b=>b.onclick=()=>play(b.dataset.play,'loop'));
+document.querySelectorAll('[data-three]').forEach(b=>b.onclick=()=>play(b.dataset.three,'three'));
+document.querySelectorAll('[data-seam]').forEach(b=>b.onclick=()=>play(b.dataset.seam,'seam'));
+$('stop').onclick=stopMusic;$('volume').oninput=()=>{if(gainNode)gainNode.gain.setTargetAtTime(+$('volume').value,audioContext.currentTime,.025)};
+window.addEventListener('unhandledrejection',e=>{$('errors').textContent='载入失败：'+String(e.reason)+'。请用本地启动器打开，或直接播放 WAV。'});
+window.addEventListener('error',e=>{$('errors').textContent=e.message});
+function tick(now){if(!paused)elapsed+=Math.min((now-last)/1000,.1);last=now;if(ready)render();if(currentSource){const t=audioContext.currentTime-currentStart;$('musicProgress').value=(t%currentDuration)/currentDuration;if(threeMode)$('musicStatus').textContent=currentTitle+' · 第 '+Math.min(3,Math.floor(t/currentDuration)+1)+' / 3 轮'}requestAnimationFrame(tick)}requestAnimationFrame(tick);
+</script></html>

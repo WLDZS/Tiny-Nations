@@ -1,0 +1,559 @@
+{
+  "sprites": {
+    "bread_baked.png": {
+      "size": [
+        32,
+        32
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 359,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 14,
+      "bounds": [
+        3,
+        8,
+        29,
+        26
+      ],
+      "clipped": false
+    },
+    "bread_burnt.png": {
+      "size": [
+        32,
+        32
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 278,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 9,
+      "bounds": [
+        3,
+        12,
+        29,
+        26
+      ],
+      "clipped": false
+    },
+    "bread_raw.png": {
+      "size": [
+        32,
+        32
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 295,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 10,
+      "bounds": [
+        3,
+        11,
+        29,
+        26
+      ],
+      "clipped": false
+    },
+    "bread_states.png": {
+      "size": [
+        96,
+        32
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 932,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 22,
+      "bounds": [
+        3,
+        8,
+        93,
+        26
+      ],
+      "clipped": false
+    },
+    "chef_all.png": {
+      "size": [
+        704,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 7968,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 22,
+      "bounds": [
+        19,
+        7,
+        684,
+        58
+      ],
+      "clipped": false
+    },
+    "chef_cast_east.png": {
+      "size": [
+        192,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 2158,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 22,
+      "bounds": [
+        20,
+        8,
+        172,
+        58
+      ],
+      "clipped": false
+    },
+    "chef_cast_east_1.png": {
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 706,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 22,
+      "bounds": [
+        20,
+        8,
+        44,
+        58
+      ],
+      "clipped": false
+    },
+    "chef_cast_east_2.png": {
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 740,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 22,
+      "bounds": [
+        20,
+        8,
+        47,
+        58
+      ],
+      "clipped": false
+    },
+    "chef_cast_east_3.png": {
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 712,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 22,
+      "bounds": [
+        20,
+        8,
+        44,
+        58
+      ],
+      "clipped": false
+    },
+    "chef_directions.png": {
+      "size": [
+        256,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 3024,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 22,
+      "bounds": [
+        19,
+        8,
+        236,
+        58
+      ],
+      "clipped": false
+    },
+    "chef_idle_east.png": {
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 699,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 22,
+      "bounds": [
+        20,
+        8,
+        44,
+        58
+      ],
+      "clipped": false
+    },
+    "chef_idle_north.png": {
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 807,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 21,
+      "bounds": [
+        20,
+        8,
+        44,
+        58
+      ],
+      "clipped": false
+    },
+    "chef_idle_south.png": {
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 826,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 21,
+      "bounds": [
+        19,
+        8,
+        44,
+        58
+      ],
+      "clipped": false
+    },
+    "chef_idle_west.png": {
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 692,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 22,
+      "bounds": [
+        20,
+        8,
+        44,
+        58
+      ],
+      "clipped": false
+    },
+    "chef_walk_east.png": {
+      "size": [
+        256,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 2786,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 22,
+      "bounds": [
+        20,
+        7,
+        236,
+        58
+      ],
+      "clipped": false
+    },
+    "chef_walk_east_1.png": {
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 699,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 22,
+      "bounds": [
+        20,
+        8,
+        44,
+        58
+      ],
+      "clipped": false
+    },
+    "chef_walk_east_2.png": {
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 699,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 22,
+      "bounds": [
+        20,
+        7,
+        44,
+        58
+      ],
+      "clipped": false
+    },
+    "chef_walk_east_3.png": {
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 689,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 22,
+      "bounds": [
+        20,
+        8,
+        44,
+        58
+      ],
+      "clipped": false
+    },
+    "chef_walk_east_4.png": {
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 699,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 22,
+      "bounds": [
+        20,
+        7,
+        44,
+        58
+      ],
+      "clipped": false
+    },
+    "fire_accident.png": {
+      "size": [
+        32,
+        32
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 176,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 8,
+      "bounds": [
+        2,
+        5,
+        30,
+        29
+      ],
+      "clipped": false,
+      "central_12x17_window_alpha_max": 0
+    },
+    "fire_normal.png": {
+      "size": [
+        32,
+        32
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 81,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 6,
+      "bounds": [
+        2,
+        19,
+        29,
+        29
+      ],
+      "clipped": false,
+      "central_12x17_window_alpha_max": 0
+    },
+    "fire_states.png": {
+      "size": [
+        64,
+        32
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 257,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 8,
+      "bounds": [
+        2,
+        5,
+        62,
+        29
+      ],
+      "clipped": false
+    },
+    "ice_accident.png": {
+      "size": [
+        32,
+        32
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 229,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 7,
+      "bounds": [
+        1,
+        5,
+        30,
+        29
+      ],
+      "clipped": false,
+      "central_12x17_window_alpha_max": 0
+    },
+    "ice_normal.png": {
+      "size": [
+        32,
+        32
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 68,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 6,
+      "bounds": [
+        1,
+        19,
+        30,
+        29
+      ],
+      "clipped": false,
+      "central_12x17_window_alpha_max": 0
+    },
+    "ice_states.png": {
+      "size": [
+        64,
+        32
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 297,
+      "partial_alpha_pixels": 0,
+      "rgba_colors": 7,
+      "bounds": [
+        1,
+        5,
+        62,
+        29
+      ],
+      "clipped": false
+    },
+    "slime_idle.png": {
+      "size": [
+        32,
+        32
+      ],
+      "mode": "RGBA",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "visible_pixels": 348,
+      "partial_alpha_pixels": 321,
+      "rgba_colors": 6,
+      "bounds": [
+        5,
+        3,
+        27,
+        28
+      ],
+      "clipped": false
+    }
+  },
+  "meshes": {
+    "floor_tile": {
+      "vertices": 8,
+      "triangles": 12,
+      "pivot": "bottom center, y=0",
+      "units": "meters",
+      "separate_boxes": 1
+    },
+    "wood_counter": {
+      "vertices": 32,
+      "triangles": 48,
+      "pivot": "bottom center, y=0",
+      "units": "meters",
+      "separate_boxes": 4
+    },
+    "serving_hatch": {
+      "vertices": 48,
+      "triangles": 72,
+      "pivot": "bottom center, y=0",
+      "units": "meters",
+      "separate_boxes": 6
+    }
+  },
+  "textures": {
+    "ceramic_64.png": {
+      "size": [
+        64,
+        64
+      ],
+      "left_right_edges_equal": true,
+      "top_bottom_edges_equal": true
+    },
+    "sage_64.png": {
+      "size": [
+        64,
+        64
+      ],
+      "left_right_edges_equal": true,
+      "top_bottom_edges_equal": true
+    },
+    "terracotta_64.png": {
+      "size": [
+        64,
+        64
+      ],
+      "left_right_edges_equal": true,
+      "top_bottom_edges_equal": true
+    },
+    "wood_64.png": {
+      "size": [
+        64,
+        64
+      ],
+      "left_right_edges_equal": true,
+      "top_bottom_edges_equal": true
+    }
+  }
+}

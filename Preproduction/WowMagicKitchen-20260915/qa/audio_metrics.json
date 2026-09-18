@@ -1,0 +1,66 @@
+{
+  "A_prep_90bpm": {
+    "seconds": 42.666666666666664,
+    "bpm": 90,
+    "bars": 16,
+    "channels": 2,
+    "sample_rate": 48000,
+    "pcm_bits": 16,
+    "peak_dbfs": -8.406309360397621,
+    "rms_dbfs": -21.00026493355729,
+    "clipped_samples": 0,
+    "dc_offset": [
+      7.077811658382416e-05,
+      6.140875816345215e-05
+    ],
+    "boundary_step": [
+      0.0040283203125,
+      0.003570556640625
+    ],
+    "boundary_step_dbfs": [
+      -47.89752007507736,
+      -48.945281464271126
+    ],
+    "adjacent_step_p99": [
+      0.030303955078125,
+      0.03466796875
+    ],
+    "seam_100ms_rms_delta_db": 1.871816570634683,
+    "min_100ms_rms_dbfs": -35.09661278404634,
+    "duration_error_samples": 0.0,
+    "tail_method": "All notes and room tails wrap modulo the exact loop length; no track fade.",
+    "listening_status": "Numeric checks passed when stated in report; subjective repeated-listening fatigue requires human audition."
+  },
+  "B_service_110bpm": {
+    "seconds": 34.909083333333335,
+    "bpm": 110,
+    "bars": 16,
+    "channels": 2,
+    "sample_rate": 48000,
+    "pcm_bits": 16,
+    "peak_dbfs": -7.067273894377264,
+    "rms_dbfs": -21.000264937019388,
+    "clipped_samples": 0,
+    "dc_offset": [
+      6.837837722978768e-05,
+      5.9076197848113714e-05
+    ],
+    "boundary_step": [
+      0.002166748046875,
+      0.00189208984375
+    ],
+    "boundary_step_dbfs": [
+      -53.28383172481285,
+      -54.46116490922928
+    ],
+    "adjacent_step_p99": [
+      0.027618408203125,
+      0.031341552734375
+    ],
+    "seam_100ms_rms_delta_db": 1.0257252439534905,
+    "min_100ms_rms_dbfs": -28.697656260038762,
+    "duration_error_samples": -0.3636363635305315,
+    "tail_method": "All notes and room tails wrap modulo the exact loop length; no track fade.",
+    "listening_status": "Numeric checks passed when stated in report; subjective repeated-listening fatigue requires human audition."
+  }
+}

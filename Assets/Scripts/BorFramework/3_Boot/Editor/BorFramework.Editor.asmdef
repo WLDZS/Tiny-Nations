@@ -1,0 +1,18 @@
+{
+    "name": "BorFramework.Editor",
+    "rootNamespace": "BorFramework.Editor",
+    "references": [
+        "GUID:b6e98ed54120545399d2ec8c5dc231e1"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

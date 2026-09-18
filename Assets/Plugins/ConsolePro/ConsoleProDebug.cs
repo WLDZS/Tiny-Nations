@@ -81,10 +81,10 @@ namespace FlyingWormConsole3
 				if (_consoleWindowType == null || !_checkedConsoleWindowType)
 				{
 					_checkedConsoleWindowType = true;
-					Assembly[] assemblies = System.AppDomain.CurrentDomain.GetAssemblies();
-					for (int iAssembly = 0; iAssembly < assemblies.Length; iAssembly++)
+					var assemblies = UnityEngine.Assemblies.CurrentAssemblies.GetLoadedAssemblies();
+					foreach (var t in assemblies)
 					{
-						Type[] types = assemblies[iAssembly].GetTypes();
+						Type[] types = t.GetTypes();
 						for (int iType = 0; iType < types.Length; iType++)
 						{
 							if (types[iType].Name == "ConsolePro3Window")

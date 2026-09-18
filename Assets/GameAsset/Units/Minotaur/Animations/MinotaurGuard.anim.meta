@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 7852db83b78ef42e2a65aa71e0401bef
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 352568
+  packageName: Tiny Swords - Enemy Pack
+  packageVersion: 1.0
+  assetPath: Assets/Tiny Swords - Enemy Pack/Enemies/Minotaur/Minotaur Animations/Minotaur_Guard.anim
+  uploadId: 844332

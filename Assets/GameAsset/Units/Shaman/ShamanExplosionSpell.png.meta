@@ -1,0 +1,711 @@
+fileFormatVersion: 2
+guid: 8107c095dde2bbc4cb87a45da843a571
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -6179212759651623699
+    second: ShamanExplosionSpell_0
+  - first:
+      213: 40281626162611565
+    second: ShamanExplosionSpell_1
+  - first:
+      213: -2587842078441844428
+    second: ShamanExplosionSpell_2
+  - first:
+      213: 459001086671000644
+    second: ShamanExplosionSpell_3
+  - first:
+      213: -203768547698866351
+    second: ShamanExplosionSpell_4
+  - first:
+      213: 3263185132037703882
+    second: ShamanExplosionSpell_5
+  - first:
+      213: -8503387341306965266
+    second: ShamanExplosionSpell_6
+  - first:
+      213: -8421210004682199999
+    second: ShamanExplosionSpell_7
+  - first:
+      213: -3622524325822097516
+    second: ShamanExplosionSpell_8
+  - first:
+      213: 1076783705628618131
+    second: ShamanExplosionSpell_9
+  - first:
+      213: -7876088472062048040
+    second: ShamanExplosionSpell_10
+  - first:
+      213: -7583783673617975563
+    second: ShamanExplosionSpell_11
+  - first:
+      213: 8889927355514431874
+    second: ShamanExplosionSpell_12
+  - first:
+      213: 1356549740389615700
+    second: ShamanExplosionSpell_13
+  - first:
+      213: 3462520505130793967
+    second: ShamanExplosionSpell_14
+  - first:
+      213: 3873222812082300819
+    second: ShamanExplosionSpell_15
+  - first:
+      213: -8667781024685461768
+    second: ShamanExplosionSpell_16
+  - first:
+      213: 1789001719655799243
+    second: ShamanExplosionSpell_17
+  - first:
+      213: -2871615280586963924
+    second: ShamanExplosionSpell_18
+  - first:
+      213: -1755488436776066348
+    second: ShamanExplosionSpell_19
+  - first:
+      213: 6956656338977842202
+    second: ShamanExplosionSpell_20
+  - first:
+      213: 4292638832797318313
+    second: ShamanExplosionSpell_21
+  - first:
+      213: -3943554457326044483
+    second: ShamanExplosionSpell_22
+  - first:
+      213: -3501852670245315196
+    second: ShamanExplosionSpell_23
+  - first:
+      213: 962991961751517052
+    second: ShamanExplosionSpell_24
+  - first:
+      213: 2279012169843689481
+    second: ShamanExplosionSpell_25
+  - first:
+      213: 215184891193720706
+    second: ShamanExplosionSpell_26
+  - first:
+      213: 3033345346603562802
+    second: ShamanExplosionSpell_27
+  - first:
+      213: 1707926176206451082
+    second: ShamanExplosionSpell_28
+  - first:
+      213: -7995942943179698099
+    second: ShamanExplosionSpell_29
+  - first:
+      213: -6854790783675119766
+    second: ShamanExplosionSpell_30
+  - first:
+      213: -6689782502827623920
+    second: ShamanExplosionSpell_31
+  - first:
+      213: -8113343651443202404
+    second: ShamanExplosionSpell_32
+  - first:
+      213: -4495378215717183279
+    second: ShamanExplosionSpell_33
+  - first:
+      213: 3987003710825687611
+    second: ShamanExplosionSpell_34
+  - first:
+      213: -2945194237078666295
+    second: ShamanExplosionSpell_35
+  - first:
+      213: -6137464737504443687
+    second: ShamanExplosionSpell_36
+  - first:
+      213: 7312160583889334281
+    second: ShamanExplosionSpell_37
+  - first:
+      213: -6272057632872536021
+    second: ShamanExplosionSpell_38
+  - first:
+      213: -2252194424883463518
+    second: ShamanExplosionSpell_39
+  - first:
+      213: -6199903826088352425
+    second: ShamanExplosionSpell_40
+  - first:
+      213: -7633453892025520664
+    second: ShamanExplosionSpell_41
+  - first:
+      213: 2771416189467741197
+    second: ShamanExplosionSpell_42
+  - first:
+      213: -3433034339324973520
+    second: ShamanExplosionSpell_43
+  - first:
+      213: 4801966391862045642
+    second: ShamanExplosionSpell_44
+  - first:
+      213: -8995203793822740331
+    second: ShamanExplosionSpell_45
+  - first:
+      213: -856284414383081981
+    second: ShamanExplosionSpell_46
+  - first:
+      213: -6674114983132994784
+    second: ShamanExplosionSpell_47
+  - first:
+      213: 2396602081323382321
+    second: ShamanExplosionSpell_48
+  - first:
+      213: 4528861564500610385
+    second: ShamanExplosionSpell_49
+  - first:
+      213: -4324349289598030214
+    second: ShamanExplosionSpell_50
+  - first:
+      213: -8688494807753547189
+    second: ShamanExplosionSpell_51
+  - first:
+      213: -9152243399962364572
+    second: ShamanExplosionSpell_52
+  - first:
+      213: -6850176444843582513
+    second: ShamanExplosionSpell_53
+  - first:
+      213: -460307120310460838
+    second: ShamanExplosionSpell_54
+  - first:
+      213: -5080283570173403524
+    second: ShamanExplosionSpell_55
+  - first:
+      213: 3311392729674032152
+    second: ShamanExplosionSpell_56
+  - first:
+      213: -912198678409048519
+    second: ShamanExplosionSpell_57
+  - first:
+      213: -4011590171904696514
+    second: ShamanExplosionSpell_58
+  - first:
+      213: -1265403245429593076
+    second: ShamanExplosionSpell_59
+  - first:
+      213: -2411346843231208445
+    second: ShamanExplosionSpell_60
+  - first:
+      213: -2499162793859639328
+    second: ShamanExplosionSpell_61
+  - first:
+      213: -7632186691345368698
+    second: ShamanExplosionSpell_62
+  - first:
+      213: -7580380199439613478
+    second: ShamanExplosionSpell_63
+  - first:
+      213: -3042368422390629833
+    second: ShamanExplosionSpell_64
+  - first:
+      213: -3756887648370734564
+    second: ShamanExplosionSpell_65
+  - first:
+      213: -4632102373081977454
+    second: ShamanExplosionSpell_66
+  - first:
+      213: -3734058800003357898
+    second: ShamanExplosionSpell_67
+  - first:
+      213: 5251354677203744723
+    second: ShamanExplosionSpell_68
+  - first:
+      213: -6825095977164244141
+    second: ShamanExplosionSpell_69
+  - first:
+      213: 7009745882063987846
+    second: ShamanExplosionSpell_70
+  - first:
+      213: -4768110927671992710
+    second: ShamanExplosionSpell_71
+  - first:
+      213: -3701902822474275533
+    second: ShamanExplosionSpell_72
+  - first:
+      213: -4213545055408358346
+    second: ShamanExplosionSpell_73
+  - first:
+      213: -9107915531561856713
+    second: ShamanExplosionSpell_74
+  - first:
+      213: -4277754226326694523
+    second: ShamanExplosionSpell_75
+  - first:
+      213: -1279576694165425740
+    second: ShamanExplosionSpell_76
+  - first:
+      213: -1830412428624400192
+    second: ShamanExplosionSpell_77
+  - first:
+      213: 483153720907495232
+    second: ShamanExplosionSpell_78
+  - first:
+      213: 2920143813910012721
+    second: ShamanExplosionSpell_79
+  - first:
+      213: 8628828485316435926
+    second: ShamanExplosionSpell_80
+  - first:
+      213: -4013916016379852099
+    second: ShamanExplosionSpell_81
+  - first:
+      213: -6473744165912833831
+    second: ShamanExplosionSpell_82
+  - first:
+      213: -1328465511305557041
+    second: ShamanExplosionSpell_83
+  - first:
+      213: 3677735804613801625
+    second: ShamanExplosionSpell_84
+  - first:
+      213: 6296387155856458377
+    second: ShamanExplosionSpell_85
+  - first:
+      213: 8945033949395752699
+    second: ShamanExplosionSpell_86
+  - first:
+      213: -3994306585079595358
+    second: ShamanExplosionSpell_87
+  - first:
+      213: 3032356076191509331
+    second: ShamanExplosionSpell_88
+  - first:
+      213: 312053400426794636
+    second: ShamanExplosionSpell_89
+  - first:
+      213: 5304553112161639145
+    second: ShamanExplosionSpell_90
+  - first:
+      213: -9166024180483786076
+    second: ShamanExplosionSpell_91
+  - first:
+      213: 3458771355128473049
+    second: ShamanExplosionSpell_92
+  - first:
+      213: 5549939591576962553
+    second: ShamanExplosionSpell_93
+  - first:
+      213: 2475020014138487060
+    second: ShamanExplosionSpell_94
+  - first:
+      213: -7503766879351596430
+    second: ShamanExplosionSpell_95
+  - first:
+      213: -2511259250149705967
+    second: ShamanExplosionSpell_96
+  - first:
+      213: -4248055889911283339
+    second: ShamanExplosionSpell_97
+  - first:
+      213: -726620242043025493
+    second: ShamanExplosionSpell_98
+  - first:
+      213: 4558531024751403961
+    second: ShamanExplosionSpell_99
+  - first:
+      213: -4194193508936954486
+    second: ShamanExplosionSpell_100
+  - first:
+      213: -1972350502632801463
+    second: ShamanExplosionSpell_101
+  - first:
+      213: -3148942161924354661
+    second: ShamanExplosionSpell_102
+  - first:
+      213: -3889793064631643395
+    second: ShamanExplosionSpell_103
+  - first:
+      213: -583574895971632097
+    second: ShamanExplosionSpell_104
+  - first:
+      213: 2887375944857633870
+    second: ShamanExplosionSpell_105
+  - first:
+      213: 6145133929947249801
+    second: ShamanExplosionSpell_106
+  - first:
+      213: 7852475739307932795
+    second: ShamanExplosionSpell_107
+  - first:
+      213: -8474426468444299367
+    second: ShamanExplosionSpell_108
+  - first:
+      213: 7699657617599456050
+    second: ShamanExplosionSpell_109
+  - first:
+      213: 4244636916618788564
+    second: ShamanExplosionSpell_110
+  - first:
+      213: -8604056834942390922
+    second: ShamanExplosionSpell_111
+  - first:
+      213: -4678144343805423668
+    second: ShamanExplosionSpell_112
+  - first:
+      213: 8241698272138890631
+    second: ShamanExplosionSpell_113
+  - first:
+      213: -318545503573010875
+    second: ShamanExplosionSpell_114
+  - first:
+      213: 8679065669209385394
+    second: ShamanExplosionSpell_115
+  - first:
+      213: 6671891147819120468
+    second: ShamanExplosionSpell_116
+  - first:
+      213: -3877273728998561554
+    second: ShamanExplosionSpell_117
+  - first:
+      213: -7091206482849967438
+    second: ShamanExplosionSpell_118
+  - first:
+      213: 8173588650338995690
+    second: ShamanExplosionSpell_119
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: ShamanExplosionSpell_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dec5765ebb60f3aa0800000000000000
+      internalID: -6179212759651623699
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ShamanExplosionSpell_1
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d65c562fceb1f8000800000000000000
+      internalID: 40281626162611565
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ShamanExplosionSpell_2
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4315aa33753261cd0800000000000000
+      internalID: -2587842078441844428
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ShamanExplosionSpell_3
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4441b827e03be5600800000000000000
+      internalID: 459001086671000644
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ShamanExplosionSpell_4
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1570302e5911c2df0800000000000000
+      internalID: -203768547698866351
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ShamanExplosionSpell_5
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ac88177a699294d20800000000000000
+      internalID: 3263185132037703882
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ShamanExplosionSpell_6
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ee258d51446edf980800000000000000
+      internalID: -8503387341306965266
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ShamanExplosionSpell_7
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 14ca3f34e1ad12b80800000000000000
+      internalID: -8421210004682199999
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ShamanExplosionSpell_8
+      rect:
+        serializedVersion: 2
+        x: 1536
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 497992191553abdc0800000000000000
+      internalID: -3622524325822097516
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ShamanExplosionSpell_9
+      rect:
+        serializedVersion: 2
+        x: 1728
+        y: 0
+        width: 192
+        height: 192
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 39d2ce1431181fe00800000000000000
+      internalID: 1076783705628618131
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 551377917dcedb74f802fca8c8688e24
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":10.0,"y":1.0},"gridSpriteSize":{"x":192.0,"y":192.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
+    nameFileIdTable:
+      ShamanExplosionSpell_0: -6179212759651623699
+      ShamanExplosionSpell_1: 40281626162611565
+      ShamanExplosionSpell_2: -2587842078441844428
+      ShamanExplosionSpell_3: 459001086671000644
+      ShamanExplosionSpell_4: -203768547698866351
+      ShamanExplosionSpell_5: 3263185132037703882
+      ShamanExplosionSpell_6: -8503387341306965266
+      ShamanExplosionSpell_7: -8421210004682199999
+      ShamanExplosionSpell_8: -3622524325822097516
+      ShamanExplosionSpell_9: 1076783705628618131
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
