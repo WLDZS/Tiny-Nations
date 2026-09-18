@@ -285,14 +285,14 @@ Resources
 
 运行时契约入口：
 
-- `Assets/Scripts/GameLogic/Units/System/UnitSystem.cs`
-- `Assets/Scripts/GameLogic/Units/Config/UnitDefinition.cs`
-- `Assets/Scripts/GameLogic/Units/Config/UnitAttributeSetConfig.cs`
-- `Assets/Scripts/GameLogic/Units/Comp/UnitAttributeComp.cs`
-- `Assets/Scripts/GameLogic/Units/Entity/UnitEntity.cs`
-- `Assets/Scripts/GameLogic/Units/Skill/SkillConfig.cs`
-- `Assets/Scripts/GameLogic/Units/Skill/MeleeAttackSkillConfig.cs`
-- `Assets/Scripts/GameLogic/Units/Skill/GuardSkillConfig.cs`
+- `Assets/Scripts/GameLogic/Units/Systems/UnitSystem.cs`
+- `Assets/Scripts/GameLogic/Units/Configs/UnitDefinition.cs`
+- `Assets/Scripts/GameLogic/Units/Configs/Attributes/UnitAttributeSetConfig.cs`
+- `Assets/Scripts/GameLogic/Units/Entities/Components/Attributes/UnitAttributeComp.cs`
+- `Assets/Scripts/GameLogic/Units/Entities/UnitEntity.cs`
+- `Assets/Scripts/GameLogic/Units/Skills/Configs/SkillConfig.cs`
+- `Assets/Scripts/GameLogic/Units/Skills/Configs/MeleeAttackSkillConfig.cs`
+- `Assets/Scripts/GameLogic/Units/Skills/Configs/GuardSkillConfig.cs`
 
 ## 13. 规范与 Skill 的同步迭代
 
