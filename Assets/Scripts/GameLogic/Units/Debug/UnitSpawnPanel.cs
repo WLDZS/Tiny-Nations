@@ -20,6 +20,7 @@ namespace GameLogic.Units
         private const float TitleBarHeight = 22f;
         private const float ToggleButtonWidth = 48f;
         private const float ToggleButtonMargin = 4f;
+        private const float SpawnOriginX = 4.5f;
         private const float SpawnSpacing = 1.5f;
         private const int SpawnColumns = 4;
 
@@ -416,7 +417,10 @@ namespace GameLogic.Units
         {
             int column = _spawnCount % SpawnColumns;
             int row = _spawnCount / SpawnColumns;
-            return new Vector3(2f + column * SpawnSpacing, -row * SpawnSpacing, 0f);
+            return new Vector3(
+                SpawnOriginX + column * SpawnSpacing,
+                -row * SpawnSpacing,
+                0f);
         }
 
         private static string GetDisplayName(string definitionAddress)

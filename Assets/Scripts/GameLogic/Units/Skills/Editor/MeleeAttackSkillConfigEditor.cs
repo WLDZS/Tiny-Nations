@@ -7,7 +7,7 @@ using UnityEngine.Rendering;
 namespace GameLogic.Units.EditorTools
 {
     [CustomEditor(typeof(MeleeAttackSkillConfig))]
-    internal sealed class MeleeAttackSkillConfigEditor : Editor
+    internal sealed class MeleeAttackSkillConfigEditor : UnityEditor.Editor
     {
         private static readonly Color PreviewFillColor = new(0.05f, 0.75f, 1f, 0.28f);
         private static readonly Color PreviewOutlineColor = new(0.1f, 0.85f, 1f, 0.95f);

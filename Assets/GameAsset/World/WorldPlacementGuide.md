@@ -13,9 +13,10 @@ World
 ├─ Grid
 │  ├─ Water                 # 水面 Tilemap
 │  ├─ Ground                # 地面 RuleTile
-│  ├─ Cliffs                # 悬崖 Tilemap
+│  ├─ CliffObstacle_01      # 完整悬崖段，根节点位于墙脚
+│  │  └─ Tiles              # 上下层视觉保持在同一个 Tilemap
 │  ├─ Decoration            # 无交互的草纹、花、碎石等 Tilemap
-│  └─ Collision             # 仅用于地图边界的碰撞 Tilemap
+│  └─ Collision             # 不可见的地形阻挡 Tilemap
 └─ WorldObjects             # 普通 GameObject，不放在 Grid 下面
    ├─ DecorationObjects     # 需要 Y 排序但不能交互的场景物件
    ├─ Harvestables
@@ -29,13 +30,24 @@ World
 
 | 内容 | 放置形式 | 位置 |
 | --- | --- | --- |
-| 水、草地、悬崖 | Tile / RuleTile | 对应 Tilemap |
+| 水、草地 | Tile / RuleTile | 对应 Tilemap |
+| 复合悬崖 | 带 `SortingGroup` 的完整分段 Tilemap | `Grid/CliffObstacle_XX/Tiles` |
 | 草纹、花瓣、细小石子 | Tile | `Decoration` |
 | 不可交互但需要前后遮挡的灌木、岩石 | Prefab | `WorldObjects/DecorationObjects` |
 | 可割除草丛 | Prefab | `WorldObjects/Harvestables/Plants` |
 | 可砍伐树木 | Prefab | `WorldObjects/Harvestables/Trees` |
 | 可开采金矿 | Prefab | `WorldObjects/Harvestables/Ores` |
 | 墙、巨石等永久阻挡物 | Prefab | `WorldObjects/Obstacles` |
+
+## 障碍物与碰撞
+
+- `Grid/Collision` 是地形阻挡的唯一事实来源。水域、地图边界和悬崖墙脚使用 `CollisionTiles/Tiles` 下的红色碰撞 Tile 绘制，不要把整张视觉 Tile 的占格直接当作碰撞。
+- `Collision` 使用 `Obstacle` Physics Layer、Static `Rigidbody2D`、`TilemapCollider2D` 和 `CompositeCollider2D`。Tilemap Collider 通过 `Merge` 合并到 Composite，Composite 使用 `Polygons` 生成实心阻挡区域。
+- `Collision` 的 `TilemapRenderer` 默认关闭。需要编辑时可以临时开启 Renderer 查看红色碰撞 Tile，完成后重新关闭。`CollisionPalette.prefab` 可作为 Tile Palette 使用。
+- `Collisions@20_0` 是完整方格；其余 Tile 提供半格、斜边等轮廓，需要斜坡或转角阻挡时再选用。
+- 悬崖墙面可能跨多个格子：只有最下面接触地面的墙脚格负责阻挡，上方墙面只负责遮挡后方道路和单位。当前地形中 `Tilemap_color1_34~36` 是墙脚；其余上层墙面不参与碰撞，但视觉上仍与墙脚放在同一个悬崖段中。
+- `WorldObjects/Obstacles` 下的永久障碍 Prefab 根节点使用 `Obstacle` Physics Layer，并在逻辑根上放置非 Trigger `Collider2D`。
+- 当前阶段碰撞只保证单位不能穿越。未来加入寻路时，寻路网格必须读取同一张 `Collision` Tilemap 和 `Obstacle` 层，避免物理阻挡与寻路数据不一致。
 
 ## Prefab 命名
 
@@ -60,12 +72,12 @@ World
 Sorting Layer 自后向前约定为：
 
 1. `Water`：水面及始终位于水面层的装饰。
-2. `Ground`：地面、悬崖、地表纹理等 Tilemap。
-3. `World`：单位、树木、矿物、灌木、岩石等需要互相前后遮挡的对象。
-4. `WorldOverlay`：明确要求始终覆盖普通世界对象的前景或特效；不要用它绕过正常 Y 排序。
+2. `Ground`：地面、地表纹理等不需要与单位穿插的 Tilemap。
+3. `World`：单位、完整悬崖段、树木、矿物、灌木、岩石等需要互相前后遮挡的对象。
+4. `WorldOverlay`：明确要求始终覆盖普通世界对象的前景或特效，不用于可绕到前后的悬崖。
 
 `World` 对象统一使用 `Sorting Order = 0`，不要再通过给单位设置固定高 Order 的方式决定前后关系。多 Sprite 或带动画的完整对象在逻辑根节点挂 `SortingGroup`，让整组内容作为一个对象参与排序。
 
 逻辑根节点的位置必须是落地点：单位使用脚底，树木与岩石使用底部中心。美术中心与落地点不一致时，把 `SpriteRenderer`、`Animator` 放到 `Visual` 子节点并只偏移 `Visual`；移动、碰撞、寻路、存档和 `SortingGroup` 仍使用根节点。
 
-地形 Tilemap 保持 Chunk 模式。需要与单位逐个穿插排序的高物体必须制作成 `WorldObjects` Prefab；只有确实需要逐 Tile 穿插时，才为专用 Tilemap 使用 Individual 模式。
+地面等不参与遮挡的 Tilemap 保持 Chunk 模式。复合悬崖不能拆成固定的前后两层，否则单位位于墙面中间时会被分层画面切开。每一段具有同一墙脚高度的悬崖使用一个 `CliffObstacle_XX` 根节点：根节点位于墙脚，挂 `World / Order 0` 的 `SortingGroup`；该段全部视觉 Tile 放在子节点 `Tiles` 中并保持 Chunk 模式。这样单位脚底位于墙脚后方时整段悬崖覆盖单位，位于墙脚前方时整段悬崖退到单位后面。墙脚高度不同的悬崖必须拆成不同渲染组，物理阻挡仍只画在 `Collision`。
