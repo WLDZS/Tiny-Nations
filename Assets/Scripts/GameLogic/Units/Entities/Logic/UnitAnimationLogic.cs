@@ -10,7 +10,7 @@ namespace GameLogic.Units.Common
 
         private readonly UnitViewComp _view;
         private readonly UnitCommandComp _command;
-        private readonly SkillComp _skills;
+        private readonly UnitSkillComp _skills;
         private readonly int _idleStateId;
         private readonly int _moveStateId;
 
@@ -19,7 +19,7 @@ namespace GameLogic.Units.Common
         public UnitAnimationLogic(
             UnitViewComp view,
             UnitCommandComp command,
-            SkillComp skills,
+            UnitSkillComp skills,
             string idleStateName,
             string moveStateName)
         {

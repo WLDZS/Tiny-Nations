@@ -13,13 +13,5 @@ namespace BorFramework
 
         UniTask<IReadOnlyList<string>> GetAssetAddressesAsync(string tag);
 
-        /// <summary>
-        /// 实例化预制体并持有它依赖的资源引用。调用方不再使用实例时必须释放返回值。
-        /// </summary>
-        UniTask<IInstanceLease> InstantiateAsync(
-            string address,
-            Vector3 position,
-            Quaternion rotation,
-            Transform parent);
     }
 }

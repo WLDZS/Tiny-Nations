@@ -1,0 +1,86 @@
+Shader "Game/Units/Sprite Flash"
+{
+    Properties
+    {
+        _MainTex("Sprite Texture", 2D) = "white" {}
+        [MaterialToggle] _ZWrite("ZWrite", Float) = 0
+
+        // SpriteRenderer legacy properties are retained for its internal data path.
+        _Color("Tint", Color) = (1, 1, 1, 1)
+        [HideInInspector] PixelSnap("Pixel snap", Float) = 0
+        [HideInInspector] _RendererColor("Renderer Color", Color) = (1, 1, 1, 1)
+        [HideInInspector] _AlphaTex("External Alpha", 2D) = "white" {}
+        [HideInInspector] _EnableExternalAlpha("Enable External Alpha", Float) = 0
+
+        _FlashColor("Flash Color", Color) = (1, 1, 1, 1)
+        _FlashAmount("Flash Amount", Range(0, 1)) = 0
+    }
+
+    SubShader
+    {
+        Tags
+        {
+            "Queue" = "Transparent"
+            "IgnoreProjector" = "True"
+            "RenderType" = "Transparent"
+            "RenderPipeline" = "UniversalPipeline"
+            "PreviewType" = "Plane"
+            "CanUseSpriteAtlas" = "True"
+        }
+
+        Cull Off
+        ZWrite [_ZWrite]
+        Blend SrcAlpha OneMinusSrcAlpha, One OneMinusSrcAlpha
+
+        Pass
+        {
+            HLSLPROGRAM
+            #pragma vertex SpriteFlashVertex
+            #pragma fragment SpriteFlashFragment
+            #pragma multi_compile_instancing
+            #pragma multi_compile _ DEBUG_DISPLAY SKINNED_SPRITE
+
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/2D/Include/Core2D.hlsl"
+
+            struct Attributes
+            {
+                COMMON_2D_INPUTS
+                half4 color : COLOR;
+                UNITY_SKINNED_VERTEX_INPUTS
+            };
+
+            struct Varyings
+            {
+                COMMON_2D_OUTPUTS
+                half4 color : COLOR;
+            };
+
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/2D/Include/2DCommon.hlsl"
+
+            CBUFFER_START(UnityPerMaterial)
+                half4 _Color;
+                half4 _FlashColor;
+                half _FlashAmount;
+            CBUFFER_END
+
+            Varyings SpriteFlashVertex(Attributes input)
+            {
+                UNITY_SKINNED_VERTEX_COMPUTE(input);
+                SetUpSpriteInstanceProperties();
+                input.positionOS = UnityFlipSprite(input.positionOS, unity_SpriteProps.xy);
+
+                Varyings output = CommonUnlitVertex(input);
+                output.color = input.color * _Color * unity_SpriteColor;
+                return output;
+            }
+
+            half4 SpriteFlashFragment(Varyings input) : SV_Target
+            {
+                half4 color = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv) * input.color;
+                color.rgb = lerp(color.rgb, _FlashColor.rgb, saturate(_FlashAmount));
+                return color;
+            }
+            ENDHLSL
+        }
+    }
+}

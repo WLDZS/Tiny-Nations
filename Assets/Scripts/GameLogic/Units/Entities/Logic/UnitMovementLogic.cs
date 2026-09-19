@@ -11,7 +11,8 @@ namespace GameLogic.Units.Common
         private readonly UnitViewComp _view;
         private readonly UnitCommandComp _command;
         private readonly UnitAttributeComp _attributes;
-        private readonly SkillComp _skills;
+        private readonly UnitSkillComp _skills;
+        private readonly UnitLifeComp _life;
         private readonly UnitPhysicsComp _physics;
 
         public override ELogicPhase Phase => ELogicPhase.Movement;
@@ -20,18 +21,26 @@ namespace GameLogic.Units.Common
             UnitViewComp view,
             UnitCommandComp command,
             UnitAttributeComp attributes,
-            SkillComp skills,
+            UnitSkillComp skills,
+            UnitLifeComp life,
             UnitPhysicsComp physics)
         {
             _view = view;
             _command = command;
             _attributes = attributes;
             _skills = skills;
+            _life = life;
             _physics = physics;
         }
 
         protected override void OnTick(float dt)
         {
+            if (_life.IsDead)
+            {
+                StopPhysicsMovement();
+                return;
+            }
+
             if (_skills.ActiveSkill != null && _skills.ActiveSkill.BlocksMovement)
             {
                 StopPhysicsMovement();
@@ -47,10 +56,13 @@ namespace GameLogic.Units.Common
             }
 
             Vector2 direction = _command.MoveDirection;
-            if (_physics != null)
+            if (_physics?.Rigidbody != null)
                 _physics.Rigidbody.linearVelocity = direction * moveSpeed;
-            else
+            else if (_view.Transform != null)
                 _view.Transform.position += (Vector3)(direction * (moveSpeed * dt));
+
+            if (_view.SpriteRenderer == null)
+                return;
 
             if (direction.x > DirectionEpsilon)
                 _view.SpriteRenderer.flipX = false;
@@ -70,7 +82,7 @@ namespace GameLogic.Units.Common
 
         private void StopPhysicsMovement()
         {
-            if (_physics != null)
+            if (_physics?.Rigidbody != null)
                 _physics.Rigidbody.linearVelocity = Vector2.zero;
         }
     }

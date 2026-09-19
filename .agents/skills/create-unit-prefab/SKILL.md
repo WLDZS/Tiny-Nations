@@ -5,7 +5,7 @@ description: Create or update a data-driven Unit prefab in Tiny-Nations, includi
 
 # Create Unit Prefab
 
-适配规范版本：`1.5`
+适配规范版本：`1.11`
 
 Create the requested Unit through the project's existing data-driven ELC pipeline.
 
@@ -27,11 +27,11 @@ Do not rely on a copied asset's serialized values without checking its reference
 1. Determine whether the current generic Unit and skill configurations already express the requested behavior.
 2. Reuse the nearest reference pattern: WarriorBlue for a multi-stage melee presentation, Skull for a single-stage melee presentation.
 3. Create or reuse a valid attribute SO. Every Unit requires Health, MaxHealth, and MoveSpeed; Mana and MaxMana are an optional pair.
-4. Create the Animator states, skill SOs, foot-anchored presentation Prefab, and `UnitDefinition` described by the specification. When real physical collision is requested, configure the root physics pair and verify physics-driven movement according to the specification.
+4. Create the Animator states, skill SOs, foot-anchored presentation Prefab, and `UnitDefinition` described by the specification. When real physical collision is requested, configure the root physics pair and verify physics-driven movement according to the specification. When the Unit must receive damage, verify the manually authored Hurtbox child, its layer, trigger state, and root Rigidbody2D ownership. Configure melee target relations explicitly; ordinary attacks target `Enemy`.
 5. Keep Unit differences in assets and configuration. Do not add Unit-specific Entity, Comp, Logic, Controller, or `MonoBehaviour` when the existing generic pipeline is sufficient.
 6. If a genuinely new capability is required, explain the missing general capability and implement only the smallest reusable extension authorized by the request.
 7. Preserve existing `.meta` files and GUIDs. Keep every project-owned C# type in its own script.
-8. Verify attribute initialization, affected references, compilation, YooAsset discovery, spawning, requested animation sequence, configured skill timing and cooldown behavior, and any requested collision behavior in proportion to the change.
+8. Verify attribute initialization, affected references, compilation, YooAsset discovery, spawning, pooled Prefab reuse and reset, runtime `TeamId`, requested animation sequence, configured skill timing and cooldown behavior, melee query size, facing mirror, target relations and hit windows, GameEffect references, fatal damage and deferred death despawn, Scene query visualization, and any requested collision behavior in proportion to the change.
 
 ## Completion report
 
@@ -39,6 +39,9 @@ Report:
 
 - which Prefab, Definition, attribute, Animator, animation, and skill assets were added or changed;
 - whether the Unit was discovered and spawned through the YooAsset debug panel;
+- which runtime `TeamId` was used and whether ally/enemy filtering was observed when combat targeting changed;
+- whether fatal damage emitted death once, stopped the Unit, and returned its Prefab instance at the end of the frame;
+- whether a later spawn reused the Prefab instance without retaining Animator, facing, material, or physics state;
 - which animation behaviors were actually observed;
 - any part that could not be verified in the current environment.
 

@@ -61,22 +61,31 @@ namespace GameLogic
             var inputModule = new InputModule(ResolveInputActions());
             var entityModule = new EntityModule(monoModule);
             var resourceModule = new ResourceModule();
+            var prefabPoolModule = new PrefabPoolModule(resourceModule);
             var sceneModule = new SceneModule(resourceModule);
             var uiModule = new UIModule(resourceModule);
             var gameSystemModule = new GameSystemModule();
+            var eventModule = new EventModule();
 
             GameHub.Ins.RegisterModule<IMonoModule>(monoModule);
-            GameHub.Ins.RegisterModule<IEventModule>(new EventModule());
+            GameHub.Ins.RegisterModule<IEventModule>(eventModule);
             GameHub.Ins.RegisterModule<IInputModule>(inputModule);
             GameHub.Ins.RegisterModule<IEntityModule>(entityModule);
             GameHub.Ins.RegisterModule<IResourceModule>(resourceModule);
+            GameHub.Ins.RegisterModule<IPrefabPoolModule>(prefabPoolModule);
             GameHub.Ins.RegisterModule<ISaveModule>(new SaveModule());
             GameHub.Ins.RegisterModule<IConfigModule>(new ConfigModule());
             GameHub.Ins.RegisterModule<ISceneModule>(sceneModule);
             GameHub.Ins.RegisterModule<IUIModule>(uiModule);
             GameHub.Ins.RegisterModule<IGameSystemModule>(gameSystemModule);
 
-            var unitSystem = new UnitSystem(resourceModule, entityModule, inputModule);
+            var unitSystem = new UnitSystem(
+                resourceModule,
+                prefabPoolModule,
+                entityModule,
+                inputModule,
+                eventModule,
+                monoModule);
             gameSystemModule.AddSystem<IUnitSystem>(unitSystem);
             gameSystemModule.AddSystem(new GameFlowSystem(sceneModule, uiModule, monoModule, unitSystem));
 

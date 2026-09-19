@@ -9,6 +9,6 @@ namespace GameLogic.Units.Skills
 
         public ESkillSlot Slot => _slot;
 
-        internal abstract ISkill CreateSkill();
+        internal abstract ISkill CreateSkill(in SkillRuntimeContext context);
     }
 }

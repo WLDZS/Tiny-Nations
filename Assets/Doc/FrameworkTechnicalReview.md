@@ -327,6 +327,7 @@ Entity B: Input -> Movement -> Combat
 | `IGameSystem` | 业务启动代码 | 注册成功后由 `GameSystemModule` | `RemoveSystem<T>()` 或模块 Dispose |
 | Entity | 业务 System | 注册成功后由 `EntityModule` | `RemoveEntity()` 或模块 Dispose |
 | 普通资源租约 | 调用加载的业务对象 | 接收 `IAssetLease<T>` 的对象 | `IAssetLease<T>.Dispose()` |
+| 池化 Prefab 实例 | `PrefabPoolModule` | 租用期间由业务，空闲期间由池桶 | `IPrefabPoolModule.Return()` |
 | UI Prefab 租约 | `UIModule` | `UIEntry` | `Destroy<TView>()` 或模块 Dispose |
 | Scene Handle | `SceneModule` | `SceneModule` | `UnloadSceneAsync()` 或资源系统整体退出 |
 | 实例化 GameObject | System / Entity / UI 模块 | 创建它的一方 | 对应业务 Dispose / UI Destroy |
@@ -429,6 +430,14 @@ Input System 生成的 `.cs` 文件不能手动改名或编辑，应修改源 `.
 - Back 始终先关闭栈顶 Window，再返回上一个 Screen；
 - Destroy 后 ViewModel、实例和资源租约都被释放。
 
+### Prefab 实例池
+
+- 相同 address 的实例归还后能够复用，UnitEntity 等业务运行时对象仍按次重建；
+- 重复归还、归还陌生实例和停止后的异步租用不会破坏池状态；
+- 空闲数量不超过池桶上限，超出的实例被销毁；
+- 模块 Dispose 会释放全部实例和 Prefab 资源租约；
+- Unit 再次租出时 Animator、朝向、材质属性和 Rigidbody2D 速度没有继承上一次状态。
+
 ### 事件与输入
 
 - ViewModel 多次打开和关闭后不会重复订阅事件；
@@ -443,7 +452,7 @@ Input System 生成的 `.cs` 文件不能手动改名或编辑，应修改源 `.
 - 自动扫描和反射注册所有模块；
 - 完整依赖注入容器；
 - 为所有操作统一创建复杂 Result 泛型；
-- 通用对象池、资源缓存和引用计数层叠封装；
+- 覆盖所有托管对象的通用池，以及对象池、资源缓存和引用计数的层叠封装；
 - 同类型 UI、System 或 Entity 的通用多实例 ID 系统；
 - 全局多阶段 ECS 调度器；
 - 为占位模块预先设计通用序列化协议。

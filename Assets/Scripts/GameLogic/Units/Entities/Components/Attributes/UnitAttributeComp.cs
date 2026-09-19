@@ -177,7 +177,7 @@ namespace GameLogic.Units.Common
                 attribute.CurrentValue + delta,
                 true);
             actualDelta = nextValue - attribute.CurrentValue;
-            attribute.SetBaseAndCurrentValue(nextValue);
+            attribute.SetCurrentValue(nextValue);
             return true;
         }
 

@@ -1,6 +1,6 @@
 # Tiny Nations Unit 预制体制作规范
 
-规范版本：`1.5`
+规范版本：`1.11`
 
 本文规定当前项目中可由 `UnitSystem` 加载、由 ELC 驱动并出现在单位调试面板中的 Unit 资产应如何制作。
 它是 Unit 资产制作的唯一事实来源；项目级 Skill 只负责引导 AI 按本文执行，不复制本文内容。
@@ -21,38 +21,44 @@
 - 单位使用的技能 `ScriptableObject`；
 - YooAsset 单位收集结果；
 - Unit 调试生成流程。
-- Unit 的 `Rigidbody2D` 与 `Collider2D` 物理碰撞配置。
+- Unit 的 `Rigidbody2D`、身体碰撞与 Hurtbox 配置；
+- 近战查询范围、命中窗口与伤害 `GameEffect`。
 
-本文描述的是当前已经落地的运行时契约，不提前设计伤害、受击、阵营、寻路或 RTS 控制逻辑。
+本文描述的是当前已经落地的运行时契约。当前实现运行时 TeamId、Self/Ally/Enemy 关系和 Health 归零后的基础死亡回收；不提前设计外交、死亡动画、尸体、复活、寻路或 RTS 控制逻辑。
 
 ## 2. 核心边界
 
 1. Unit Prefab 是纯表现对象，不挂项目自有的 `MonoBehaviour`、Unit Controller 或 Unit View。
-2. `UnitSystem` 负责按 `UnitDefinition` 地址加载配置和 Prefab、创建 `UnitEntity`、持有资源租约并销毁单位。
+2. `UnitSystem` 负责按 `UnitDefinition` 地址加载配置、从 Prefab 池租用表现对象、创建 `UnitEntity`，并在 Despawn 时归还表现对象和释放 UnitDefinition 租约。
 3. `UnitEntity` 组装通用 Comp 与 Logic；不要为 Warrior、Skull 等具体兵种新增专属 Entity、Comp、Logic 或 Controller。
 4. 单位差异优先由 `UnitDefinition`、属性 SO、技能 SO、Animator Controller 和动画资源表达。
 5. 一个 C# 文件只放一个类型。不要把运行时辅助类型写成另一个类的嵌套类型。
 6. 如果当前通用配置无法表达新单位需求，先指出缺失的通用能力及最小扩展方案；不要直接把兵种特例写进通用系统。
 7. 属性 SO 只保存共享初始配置；每个生成的单位必须持有独立的运行时属性值，禁止修改共享 SO 表示掉血、耗蓝或临时 Buff。
+8. 战斗队伍是 Unit 实例的运行时数据，由 `UnitSpawnRequest.TeamId` 传入；不要把队伍写死在 Prefab 或 `UnitDefinition` 中，也不要用 Layer 或 Tag 表达敌我关系。
+9. 单位存活状态由通用 `UnitLifeComp` 保存。致死伤害发布一次 `UnitDeathEvent`，停止输入、移动和技能，并由 `UnitSystem` 在当帧 LateUpdate 安全回收；不要在伤害回调中重入销毁 Entity。
 
 ## 3. 每个 Unit 的交付物
 
 一个可生成 Unit 至少包含：
 
 ```text
-Assets/GameAsset/Units/
-├─ Definitions/
-│  └─ <UnitName>Definition.asset
-└─ <UnitType>/
-   ├─ <UnitType>Attributes.asset
-   └─ [<Variant>/]
-      ├─ Animations/
-      │  ├─ <UnitName>.controller
-      │  └─ <UnitName><Action>.anim
-      ├─ SkillConfigs/
-      │  └─ <UnitName><SkillName>.asset
-      ├─ <UnitName>.prefab
-      └─ 动画使用的 Sprite 或 Sprite Sheet
+Assets/GameAsset/
+├─ GameEffects/
+│  └─ <EffectName>.asset
+└─ Units/
+   ├─ Definitions/
+   │  └─ <UnitName>Definition.asset
+   └─ <UnitType>/
+      ├─ <UnitType>Attributes.asset
+      └─ [<Variant>/]
+         ├─ Animations/
+         │  ├─ <UnitName>.controller
+         │  └─ <UnitName><Action>.anim
+         ├─ SkillConfigs/
+         │  └─ <UnitName><SkillName>.asset
+         ├─ <UnitName>.prefab
+         └─ 动画使用的 Sprite 或 Sprite Sheet
 ```
 
 - 有颜色或皮肤变体时使用 `Units/<UnitType>/<Variant>`，例如 `Units/Warrior/Blue`。
@@ -68,9 +74,11 @@ Prefab 使用以下表现层级：
 
 ```text
 <UnitName>                # 逻辑根节点，位置在脚底落地点
-└─ Visual                 # 美术节点，向上偏移到正确视觉位置
-   ├─ SpriteRenderer
-   └─ Animator
+├─ Visual                 # 美术节点，向上偏移到正确视觉位置
+│  ├─ SpriteRenderer
+│  └─ Animator
+└─ Hurtbox                # 需要参与受击判定时手动添加
+   └─ Collider2D
 ```
 
 根对象至少包含 `Transform` 与 `SortingGroup`；`Visual` 至少包含 `Transform`、`SpriteRenderer` 与 `Animator`。
@@ -93,6 +101,14 @@ Prefab 使用以下表现层级：
 3. 身体 `Collider2D` 不勾选 `Is Trigger`，只表达稳定的单位占地，不跟随武器或攻击动画轮廓变化。
 4. 物理组件存在时，`UnitMovementLogic` 通过刚体速度移动；没有物理组件的旧 Unit 暂时保留 Transform 移动。
 5. 技能触发距离与身体碰撞体是不同概念，不通过放大身体碰撞体表达攻击范围。
+
+需要参与伤害判定的 Unit 额外手动添加 Hurtbox：
+
+1. Hurtbox 是逻辑根节点的子对象，Layer 使用 `UnitHurtbox`。
+2. Hurtbox 只挂一个符合单位受击轮廓的 `Collider2D`，并勾选 `Is Trigger`。
+3. Hurtbox 不再添加 `Rigidbody2D`；它通过根节点的 `Rigidbody2D` 归属到当前 `UnitEntity`。
+4. 根节点的非 Trigger 身体碰撞体继续负责单位之间的物理阻挡；Hurtbox 只用于技能查询，两者职责不能混用。
+5. 当前近战查询只命中技能 SO 中 `_hitLayerMask` 包含的 Layer，因此没有 Hurtbox 的单位不会受到近战伤害。
 
 当前由 `WarriorBlue` 作为真实单位碰撞试点。
 
@@ -165,7 +181,8 @@ Resources
 
 无临时影响时 `CurrentValue` 等于 `BaseValue`。移动逻辑读取 `MoveSpeed.CurrentValue`；资源修改通过 `TryChangeResource` 执行并限制在 `0` 到最大属性 `CurrentValue` 之间。
 
-属性系统当前只实现初始化、查询、Base/Current 设置、Current 重置和 Resource 增减，不包含完整 Modifier、Buff 或 GameplayEffect 栈。
+属性系统当前只实现初始化、查询、Base/Current 设置、Current 重置和 Resource 增减。
+资源增减只修改 `CurrentValue`，不会改写 `BaseValue`。当前伤害 GameEffect 通过该入口扣除 Health。
 
 ## 8. 技能 SO 配置
 
@@ -176,7 +193,7 @@ Resources
 - `Primary`：普通攻击；
 - `Secondary`：防御。
 
-同一个 Unit 的 `_skills` 中不要注册重复 Slot，否则后注册的技能无法进入 `SkillComp`。Slot 目前仍属于 `SkillConfig` 的运行时契约；如果以后要让同一技能配置复用于不同按键槽位，应单独调整装配模型，不在制作单个 Unit 时临时绕过。
+同一个 Unit 的 `_skills` 中不要注册重复 Slot，否则后注册的技能无法进入 `UnitSkillComp`。Slot 目前仍属于 `SkillConfig` 的运行时契约；如果以后要让同一技能配置复用于不同按键槽位，应单独调整装配模型，不在制作单个 Unit 时临时绕过。
 
 ### 8.2 近战攻击
 
@@ -185,6 +202,12 @@ Resources
 - `_slot`；
 - `_triggerRange`；
 - `_cooldownSeconds`；
+- `_querySize`；
+- `_queryOffset`；
+- `_hitLayerMask`；
+- `_targetRelations`；
+- `_hitWindows`；
+- `_gameEffects`；
 - `_animationStages`。
 
 `_animationStages` 是有序数组：
@@ -192,9 +215,23 @@ Resources
 - 单段攻击配置一个元素，例如 Skull 的 `Skull_Attack`；
 - 多段表现按播放顺序配置多个元素，例如 WarriorBlue 的 `Warrior_Attack1_Blue`、`Warrior_Attack2_Blue`；
 - `_durationSeconds` 表示该阶段在切换到下一阶段前持续的时间，应按动画 Clip 的实际长度填写；
-- 当前数组只描述连续动画表现，不代表伤害段数，也不在这里实现伤害结算。
+- 当前数组只描述连续动画表现，不代表伤害段数。
 
 数组不能为空，也不要填写空状态名或非正持续时间；无效阶段会被运行时忽略，全部无效时技能无法触发。
+
+命中判定使用 `Physics2D.OverlapBox`：
+
+- `_querySize` 是世界单位下的方形或矩形宽高，两个分量都必须大于 0；
+- `_queryOffset` 是以单位朝右为基准、相对逻辑根节点的偏移；朝左时运行时自动镜像 X 分量，Y 分量不变；
+- `_hitLayerMask` 通常只选择 `UnitHurtbox`；
+- `_targetRelations` 声明允许命中的关系，可组合 `Self`、`Ally`、`Enemy`；普通攻击只配置 `Enemy`；
+- `_hitWindows` 可配置多个“开始时间 + 持续时间”，时间从本次技能开始时计算；
+- 有效窗口内每个 Tick 都会查询，因此目标在窗口开始后进入范围仍可被命中；
+- 同一个目标在同一个窗口内只命中一次，不同窗口可再次命中。WarriorBlue 当前配置两个窗口，Skull 配置一个窗口；
+- `_gameEffects` 是命中后施加给目标的 Effect 列表，可同时配置瞬时伤害与 DoT。
+
+选中 `MeleeAttackSkillConfig` 时，Inspector 提供攻击范围预览，可指定预览基准、切换左右朝向，并在 Scene 视图中直接调整 Offset 与 Size。蓝色实心矩形表示编辑态查询范围。
+运行攻击时，Scene 视图会实时绘制实心查询矩形。黄色表示攻击正在播放但当前不在命中窗口，红色表示当前处于命中窗口。
 
 ### 8.3 防御
 
@@ -208,7 +245,40 @@ Resources
 
 当前防御按住时保持激活。释放发生在 `_minimumDurationSeconds` 之前时，防御会保持到最短持续时间届满后再停止；
 实际停止防御时开始计算 `_cooldownSeconds`，冷却结束前不能再次进入防御。系统级取消不受最短持续时间限制。
-伤害系统尚未落地，`_damageReductionRatio` 只是已经保留的通用配置，不代表当前已有完整伤害结算。
+当前伤害 GameEffect 已能扣除 Health，但防御减伤尚未接入伤害结算；`_damageReductionRatio` 仍只是保留的通用配置。
+
+### 8.4 伤害 GameEffect
+
+使用 `GameEffectConfig` 配置伤害：
+
+- `_durationPolicy = Instant`：命中时立即结算一次 `_damagePerApplication`；
+- `_durationPolicy = Duration`：持续 `_durationSeconds`，每隔 `_periodSeconds` 结算一次 `_damagePerApplication`；
+- Duration Effect 的第一次伤害在第一个 Period 到达时结算，不在施加瞬间额外结算；
+- 如果一次命中同时需要初始伤害和 DoT，在近战技能的 `_gameEffects` 中同时配置一个 Instant Effect 与一个 Duration Effect；
+- 同一个 Duration Effect 被重复施加时，首版作为相互独立的运行时实例叠加；
+- 实际伤害会限制 Health 不低于 0，并发布 `UnitDamageEvent`，事件同时包含请求伤害与实际伤害。
+- Health 首次降到 0 时会把 `UnitLifeComp` 标记为死亡，并发布一次 `UnitDeathEvent`；Instant 与 Duration 伤害使用同一规则。
+
+`Assets/GameAsset/GameEffects/BasicMeleeDamage.asset` 是当前基础近战瞬时伤害示例。防御减伤、死亡动画、尸体保留、掉落、复活与更复杂的 Modifier/Tag/Stack 规则仍未接入。
+
+### 8.5 战斗队伍与目标关系
+
+1. `UnitSpawnRequest.TeamId` 是运行时队伍来源；同一种 UnitDefinition 和 Prefab 可以按不同 TeamId 生成。
+2. `UnitEntity` 使用通用 `UnitTeamComp` 保存 TeamId，不创建兵种专属阵营组件。
+3. `UnitSystem` 统一解析关系：同一实体为 `Self`，TeamId 相同为 `Ally`，TeamId 不同为 `Enemy`。
+4. 技能通过 `_targetRelations` 决定允许影响的关系；关系过滤发生在查询到 UnitEntity 之后、应用 GameEffect 之前。
+5. `GameEffect` 不判断敌我关系，同一个伤害或治疗 Effect 可以被不同目标规则的技能复用。
+6. Layer 继续只表达 `UnitHurtbox` 等物理查询角色，不建立 PlayerHurtbox、EnemyHurtbox 等阵营 Layer。
+7. 当前 Demo 玩家使用 TeamId 1，单位调试面板默认使用 TeamId 2，并允许输入其他整数 TeamId。
+
+### 8.6 基础死亡流程
+
+1. 每个 `UnitEntity` 都持有独立的 `UnitLifeComp`，初始为存活。
+2. `GameEffectComp` 成功扣除 Health 后先发布 `UnitDamageEvent`；如果 Health 首次降到 0，再将单位标记为死亡并发布一次 `UnitDeathEvent`。
+3. 死亡单位立即拒绝新的 GameEffect，输入、移动和技能 Logic 停止继续执行。
+4. `UnitSystem` 收到死亡事件后只加入待销毁队列，不在 Entity Tick 或事件回调中立即释放对象。
+5. `UnitSystem` 在当帧 LateUpdate 统一 `Despawn` 死亡单位：销毁本次 UnitEntity 运行时状态，通过 `IPrefabPoolModule.Return` 将 Prefab GameObject 归还池桶，并释放 UnitDefinition 租约。Prefab 资源租约由池桶统一持有。
+6. 当前没有死亡动画和死亡停留时间，死亡单位会在致死当帧末直接消失。后续死亡表现应建立在 `UnitDeathEvent` 上，不把动画特例写进 `GameEffectComp`。
 
 ## 9. YooAsset 收集约束
 
@@ -234,11 +304,11 @@ Resources
 3. 检查源 Sprite、Animation Clip、循环设置和真实时长；不要凭名称猜测。
 4. 创建或整理 Animator Controller，确保所有配置使用的状态真实存在。
 5. 创建或复用属性 SO，至少配置 MaxHealth、MoveSpeed，以及上限为 MaxHealth 的 Health。
-6. 创建技能 SO；普通攻击按真实表现填写一段或多段 `_animationStages`。
-7. 创建脚底为逻辑根、带 `SortingGroup` 和 `Visual` 子节点的表现 Prefab，并正确绑定 Sprite 和 Animator Controller；需要真实物理碰撞时，在根节点成对配置 Dynamic `Rigidbody2D` 与非 Trigger 身体 `Collider2D`。
+6. 创建技能 SO；普通攻击按真实表现填写一段或多段 `_animationStages`，并配置方形查询范围、目标关系、命中窗口和命中后 GameEffect。普通攻击默认只命中 `Enemy`。
+7. 创建脚底为逻辑根、带 `SortingGroup` 和 `Visual` 子节点的表现 Prefab，并正确绑定 Sprite 和 Animator Controller；需要真实物理碰撞时，在根节点成对配置 Dynamic `Rigidbody2D` 与非 Trigger 身体 `Collider2D`；需要受击时手动添加 `UnitHurtbox` Layer 的 Trigger 子碰撞体。
 8. 创建 `Definitions/<UnitName>Definition.asset`，填写 Prefab address、属性、移动动画与技能列表。
 9. 检查 GUID 引用、YooAsset address 唯一性和 Collector 覆盖范围。
-10. 进入开发运行环境，用“YooAsset 单位生成”面板刷新列表并生成该 Unit。
+10. 进入开发运行环境，用“YooAsset 单位生成”面板选择 TeamId、刷新列表并生成该 Unit；需要受伤的单位还应验证 Health 归零后只死亡一次并在帧末安全移除。
 
 如果只是新增现有配置已能表达的 Unit，不应修改通用 C# 代码。
 
@@ -246,7 +316,7 @@ Resources
 
 - [ ] 项目当前编译无新增错误。
 - [ ] 调试面板能从 `UnitDefinition` 标签中发现新 Unit。
-- [ ] 点击生成后 Prefab 成功实例化，没有缺少 `Animator` 或 `SpriteRenderer` 的日志。
+- [ ] 点击生成后 Prefab 成功租出，没有缺少 `Animator` 或 `SpriteRenderer` 的日志。
 - [ ] 属性 SO 包含 MaxHealth、MoveSpeed 和正确绑定 MaxHealth 的 Health。
 - [ ] 使用 Mana 的单位同时包含 Mana 与 MaxMana；不使用 Mana 的单位同时省略两者。
 - [ ] 每个运行时 Unit 拥有独立的属性值，没有修改共享属性 SO。
@@ -254,6 +324,16 @@ Resources
 - [ ] Unit 生成后默认播放 Idle。
 - [ ] 移动时播放 Move，停止时回到 Idle。
 - [ ] Primary 按顺序播放全部攻击动画阶段；单段和多段配置均不依赖兵种专属代码。
+- [ ] Primary 的查询范围、偏移、LayerMask、目标关系和全部命中窗口来自技能 SO。
+- [ ] QueryOffset.x 会随单位左右朝向镜像，实际判定与预览一致。
+- [ ] Scene 视图在编辑态显示蓝色实心查询矩形，运行时窗口外为黄色、窗口内为红色。
+- [ ] Hurtbox 是 `UnitHurtbox` Layer 的 Trigger 子碰撞体，不额外挂刚体。
+- [ ] 同一目标在同一命中窗口只结算一次，不同窗口能够再次结算。
+- [ ] Instant GameEffect 立即扣除 Health；Duration GameEffect 按 Period 持续扣除，并且不会修改 Health.BaseValue。
+- [ ] Unit 的 TeamId 来自生成请求；普通攻击能命中不同 TeamId 的 Enemy，不能命中相同 TeamId 的 Ally。
+- [ ] 致死伤害先发布最后一次 UnitDamageEvent，再发布一次 UnitDeathEvent；死亡单位停止输入、移动、技能与新 Effect。
+- [ ] 死亡单位在 LateUpdate 安全 Despawn，没有 Entity 遍历重入异常、重复死亡或资源租约泄漏。
+- [ ] 同一 Unit 再次生成时复用已归还的 Prefab 实例，并正确恢复 Idle、默认朝向、材质属性和零物理速度。
 - [ ] Secondary 能进入并退出 Guard 表现。
 - [ ] 提前释放 Guard 时会保持到配置的最短持续时间，正常释放后不会无限保持。
 - [ ] Guard 结束后进入配置的冷却时间，冷却结束前不能再次触发。
@@ -289,10 +369,18 @@ Resources
 - `Assets/Scripts/GameLogic/Units/Configs/UnitDefinition.cs`
 - `Assets/Scripts/GameLogic/Units/Configs/Attributes/UnitAttributeSetConfig.cs`
 - `Assets/Scripts/GameLogic/Units/Entities/Components/Attributes/UnitAttributeComp.cs`
+- `Assets/Scripts/GameLogic/Units/Entities/Components/UnitLifeComp.cs`
+- `Assets/Scripts/GameLogic/Units/Entities/Components/UnitSkillComp.cs`
+- `Assets/Scripts/GameLogic/Units/Entities/Components/GameEffectComp.cs`
+- `Assets/Scripts/GameLogic/Units/Entities/Logic/GameEffectLogic.cs`
 - `Assets/Scripts/GameLogic/Units/Entities/UnitEntity.cs`
 - `Assets/Scripts/GameLogic/Units/Skills/Configs/SkillConfig.cs`
 - `Assets/Scripts/GameLogic/Units/Skills/Configs/MeleeAttackSkillConfig.cs`
 - `Assets/Scripts/GameLogic/Units/Skills/Configs/GuardSkillConfig.cs`
+- `Assets/Scripts/GameLogic/Units/Skills/Configs/SkillHitWindow.cs`
+- `Assets/Scripts/GameLogic/Units/Effects/GameEffectConfig.cs`
+- `Assets/Scripts/GameLogic/Units/Events/UnitDamageEvent.cs`
+- `Assets/Scripts/GameLogic/Units/Events/UnitDeathEvent.cs`
 
 ## 13. 规范与 Skill 的同步迭代
 

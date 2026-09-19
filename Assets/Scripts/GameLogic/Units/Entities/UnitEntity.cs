@@ -1,5 +1,6 @@
 using BorFramework;
 using GameLogic.Units.Common;
+using GameLogic.Units.Effects;
 using GameLogic.Units.Skills;
 using UnityEngine;
 
@@ -11,7 +12,7 @@ namespace GameLogic.Units
         private const string AttackActionName = "Attack";
         private const string GuardActionName = "Crouch";
 
-        private readonly UnitAttributeComp _attributes;
+        public bool IsDead => GetComp<UnitLifeComp>()?.IsDead == true;
 
         internal UnitEntity(
             GameObject gameObject,
@@ -21,11 +22,14 @@ namespace GameLogic.Units
             Collider2D bodyCollider,
             UnitDefinition definition,
             UnitAttributeComp attributes,
+            int teamId,
             IInputModule inputModule,
+            IUnitQuery unitQuery,
+            IUnitRelationResolver relationResolver,
+            IEventModule eventModule,
             bool usePlayerInput)
         {
             Go = gameObject;
-            _attributes = attributes;
 
             var command = new UnitCommandComp
             {
@@ -51,10 +55,32 @@ namespace GameLogic.Units
 
             attributes.Entity = this;
 
-            var skills = new SkillComp
+            var life = new UnitLifeComp
             {
                 Entity = this
             };
+
+            var team = new UnitTeamComp(teamId)
+            {
+                Entity = this
+            };
+
+            var skills = new UnitSkillComp
+            {
+                Entity = this
+            };
+
+            var effects = new GameEffectComp(attributes, life, eventModule)
+            {
+                Entity = this
+            };
+
+            var skillRuntimeContext = new SkillRuntimeContext(
+                this,
+                gameObject.transform,
+                view,
+                unitQuery,
+                relationResolver);
 
             for (int i = 0; i < definition.Skills.Count; i++)
             {
@@ -62,14 +88,19 @@ namespace GameLogic.Units
                 if (config == null)
                     continue;
 
-                if (!skills.TryRegister(config.Slot, config.CreateSkill()))
+                if (!skills.TryRegister(
+                        config.Slot,
+                        config.CreateSkill(skillRuntimeContext)))
                     Debug.LogWarning($"单位技能槽重复，已忽略：{config.Slot}", gameObject);
             }
 
             AddComp(command);
             AddComp(view);
             AddComp(attributes);
+            AddComp(life);
+            AddComp(team);
             AddComp(skills);
+            AddComp(effects);
 
             if (physics != null)
                 AddComp(physics);
@@ -81,18 +112,21 @@ namespace GameLogic.Units
                     view,
                     command,
                     skills,
+                    life,
                     MoveActionName,
                     AttackActionName,
                     GuardActionName));
             }
-
             AddLogic(new UnitMovementLogic(
                 view,
                 command,
                 attributes,
                 skills,
+                life,
                 physics));
-            AddLogic(new SkillLogic(skills));
+            AddLogic(new SkillLogic(skills, life));
+            AddLogic(new UnitGameEffectLogic(effects));
+            AddLogic(new UnitDamageFlashLogic(view));
             AddLogic(new UnitAnimationLogic(
                 view,
                 command,
@@ -103,21 +137,44 @@ namespace GameLogic.Units
 
         public bool HasAttribute(EUnitAttributeType type)
         {
-            return _attributes.HasAttribute(type);
+            return GetComp<UnitAttributeComp>()?.HasAttribute(type) == true;
+        }
+
+        public bool TryGetTeamId(out int teamId)
+        {
+            UnitTeamComp team = GetComp<UnitTeamComp>();
+            if (team != null)
+            {
+                teamId = team.TeamId;
+                return true;
+            }
+
+            teamId = 0;
+            return false;
         }
 
         public bool TryGetAttributeBaseValue(
             EUnitAttributeType type,
             out float value)
         {
-            return _attributes.TryGetBaseValue(type, out value);
+            UnitAttributeComp attributes = GetComp<UnitAttributeComp>();
+            if (attributes != null)
+                return attributes.TryGetBaseValue(type, out value);
+
+            value = 0f;
+            return false;
         }
 
         public bool TryGetAttributeCurrentValue(
             EUnitAttributeType type,
             out float value)
         {
-            return _attributes.TryGetCurrentValue(type, out value);
+            UnitAttributeComp attributes = GetComp<UnitAttributeComp>();
+            if (attributes != null)
+                return attributes.TryGetCurrentValue(type, out value);
+
+            value = 0f;
+            return false;
         }
 
         public bool TryChangeResource(
@@ -125,7 +182,24 @@ namespace GameLogic.Units
             float delta,
             out float actualDelta)
         {
-            return _attributes.TryChangeResource(type, delta, out actualDelta);
+            UnitAttributeComp attributes = GetComp<UnitAttributeComp>();
+            if (attributes != null)
+                return attributes.TryChangeResource(type, delta, out actualDelta);
+
+            actualDelta = 0f;
+            return false;
+        }
+
+        public bool TryApplyGameEffect(
+            GameEffectConfig config,
+            UnitEntity source)
+        {
+            return GetComp<GameEffectComp>()?.TryApply(config, source) == true;
+        }
+
+        internal void PlayDamageFlash()
+        {
+            GetLogic<UnitDamageFlashLogic>()?.Play();
         }
     }
 }

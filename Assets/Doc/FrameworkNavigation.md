@@ -34,10 +34,11 @@ flowchart TB
     InputSystem["Unity Input System"]
 
     Boot --> Hub
-    Hub --> Log & Mono & Event & Input & Entity & Resource & Save & Config & Scene & UI & System
+    Hub --> Log & Mono & Event & Input & Entity & Resource & Pool & Save & Config & Scene & UI & System
     Entity -->|订阅 OnUpdate| Mono
     Scene --> Resource
     UI --> Resource
+    Pool --> Resource
     Resource --> YooAsset
     Input --> InputSystem
     Entity --> ELC
@@ -59,6 +60,7 @@ flowchart TB
 
 ```csharp
 var resourceModule = GameHub.Ins.GetModule<IResourceModule>();
+var prefabPoolModule = GameHub.Ins.GetModule<IPrefabPoolModule>();
 var eventModule = GameHub.Ins.GetModule<IEventModule>();
 var uiModule = GameHub.Ins.GetModule<IUIModule>();
 ```
@@ -66,6 +68,7 @@ var uiModule = GameHub.Ins.GetModule<IUIModule>();
 | 要做什么 | 找哪个模块 / 类型 | 首选 API | 接口 / 基类 |
 | --- | --- | --- | --- |
 | 加载 Prefab、材质等资源 | `IResourceModule` | `LoadAssetAsync<T>(address)` | [`IResourceModule.cs`](../Scripts/BorFramework/2_Module/ResourceModule/IResourceModule.cs) |
+| 高频创建和回收 Prefab | `IPrefabPoolModule` | `RentAsync` / `Return` | [`IPrefabPoolModule.cs`](../Scripts/BorFramework/2_Module/PrefabPoolModule/IPrefabPoolModule.cs) |
 | 加载、卸载、激活场景 | `ISceneModule` | `LoadSceneAsync` / `UnloadSceneAsync` / `SetActiveScene` | [`ISceneModule.cs`](../Scripts/BorFramework/2_Module/SceneModule/ISceneModule.cs) |
 | 注册和打开 UI | `IUIModule` | `Register` / `OpenAsync` / `PushScreenAsync` / `OpenWindowAsync` | [`IUIModule.cs`](../Scripts/BorFramework/2_Module/UIModule/IUIModule.cs) |
 | 发送或监听业务事件 | `IEventModule` | `Publish` / `Subscribe` / `Unsubscribe` | [`IEventModule.cs`](../Scripts/BorFramework/2_Module/EventModule/IEventModule.cs) |
@@ -120,11 +123,12 @@ sequenceDiagram
 4. `IInputModule`
 5. `IEntityModule`
 6. `IResourceModule`
-7. `ISaveModule`
-8. `IConfigModule`
-9. `ISceneModule`
-10. `IUIModule`
-11. `IGameSystemModule`
+7. `IPrefabPoolModule`
+8. `ISaveModule`
+9. `IConfigModule`
+10. `ISceneModule`
+11. `IUIModule`
+12. `IGameSystemModule`
 
 所有模块实现统一生命周期 [`IModule`](../Scripts/BorFramework/1_Core/Hub/IModule.cs)：`Init → Start → Stop → Dispose`。新增模块时，接口应继承 `IModule`，实现放在 `2_Module` 对应目录，并在 `GameBoot.Init()` 中按依赖顺序注册。
 
@@ -170,7 +174,19 @@ lease.Dispose();
 
 资源地址来自 [`BundleCollectorSetting.asset`](../BundleCollectorSetting.asset)，不要把磁盘路径当作 address。
 
-### 4.3 Scene：场景导航
+### 4.3 PrefabPool：Prefab 实例复用
+
+源码：[`IPrefabPoolModule.cs`](../Scripts/BorFramework/2_Module/PrefabPoolModule/IPrefabPoolModule.cs) · [`PrefabPoolModule.cs`](../Scripts/BorFramework/2_Module/PrefabPoolModule/PrefabPoolModule.cs)
+
+| API | 用途 / 约束 |
+| --- | --- |
+| `RentAsync(address, position, rotation, parent)` | 返回尚未激活的 GameObject；失败返回 `null`。 |
+| `Return(instance)` | 将 GameObject 归还原池桶；陌生实例或重复归还返回 `false`。 |
+
+池模块只负责 GameObject、容量和 Prefab 资源租约。Entity、属性、技能、队伍等运行时状态由业务 System 重建和清理。
+租出的实例属于父节点所在场景，无父节点时属于活动场景；场景卸载前必须先归还对应实例。
+
+### 4.4 Scene：场景导航
 
 源码：[`ISceneModule.cs`](../Scripts/BorFramework/2_Module/SceneModule/ISceneModule.cs) · [`SceneModule.cs`](../Scripts/BorFramework/2_Module/SceneModule/SceneModule.cs)
 
@@ -185,7 +201,7 @@ lease.Dispose();
 
 场景加载示例：[`MainMenuState.cs`](../Scripts/GameLogic/GameFlow/States/MainMenuState.cs) · [`DemoState.cs`](../Scripts/GameLogic/GameFlow/States/DemoState.cs)。
 
-### 4.4 UI：MVVM、分层与导航栈
+### 4.5 UI：MVVM、分层与导航栈
 
 源码：[`IUIModule.cs`](../Scripts/BorFramework/2_Module/UIModule/IUIModule.cs) · [`UIModule.cs`](../Scripts/BorFramework/2_Module/UIModule/UIModule.cs)
 
@@ -226,7 +242,7 @@ UI 基类与扩展点：
 
 完整接入示例：[`MainMenuState.cs`](../Scripts/GameLogic/GameFlow/States/MainMenuState.cs) · [`MainMenuView.cs`](../Scripts/GameLogic/MainMenu/UI/MainMenuView.cs) · [`MainMenuViewModel.cs`](../Scripts/GameLogic/MainMenu/UI/MainMenuViewModel.cs)。
 
-### 4.5 Event：进程内事件总线
+### 4.6 Event：进程内事件总线
 
 源码：[`IEventModule.cs`](../Scripts/BorFramework/2_Module/EventModule/IEventModule.cs) · [`IEvent.cs`](../Scripts/BorFramework/2_Module/EventModule/IEvent.cs)
 
@@ -246,7 +262,7 @@ eventModule.Unsubscribe<HealthChangedEvent>(OnHealthChanged);
 - 持有订阅的对象应在关闭或销毁时调用 `Unsubscribe`。
 - `Dispose()` 会清空全部监听器。
 
-### 4.6 Input：按 Action 名读取输入
+### 4.7 Input：按 Action 名读取输入
 
 源码：[`IInputModule.cs`](../Scripts/BorFramework/2_Module/InputModule/IInputModule.cs) · [`InputModule.cs`](../Scripts/BorFramework/2_Module/InputModule/InputModule.cs)
 
@@ -260,7 +276,7 @@ eventModule.Unsubscribe<HealthChangedEvent>(OnHealthChanged);
 
 默认 InputActionAsset：[`DefultInputSystem.inputactions`](../Resources/Input/DefultInputSystem.inputactions)。找不到 Action 时返回零值或 `false` 并记录警告。
 
-### 4.7 Mono：Unity 帧回调桥接
+### 4.8 Mono：Unity 帧回调桥接
 
 源码：[`IMonoModule.cs`](../Scripts/BorFramework/2_Module/MonoModule/IMonoModule.cs) · [`MonoModule.cs`](../Scripts/BorFramework/2_Module/MonoModule/MonoModule.cs)
 
@@ -275,7 +291,7 @@ monoModule.OnUpdate -= OnUpdate;
 - `OnLateUpdate` 对应 `GameBoot.LateUpdate`。
 - `DoFixedUpdate / DoUpdate / DoLateUpdate` 是启动层的转发入口，普通业务通常只订阅事件。
 
-### 4.8 Entity / Logic / Component：ELC
+### 4.9 Entity / Logic / Component：ELC
 
 源码目录：[`ELC`](../Scripts/BorFramework/1_Core/ELC) · 管理模块：[`IEntityModule.cs`](../Scripts/BorFramework/2_Module/EntityModule/IEntityModule.cs)
 
@@ -299,7 +315,7 @@ flowchart LR
 
 当前正式流程暂未接入具体 `Entity / Logic`，新增玩法对象时按上述 API 组合即可。
 
-### 4.9 GameSystem：业务系统生命周期
+### 4.10 GameSystem：业务系统生命周期
 
 源码：[`IGameSystem.cs`](../Scripts/BorFramework/2_Module/GameSystemModule/IGameSystem.cs) · [`IGameSystemModule.cs`](../Scripts/BorFramework/2_Module/GameSystemModule/IGameSystemModule.cs) · [`GameSystemModule.cs`](../Scripts/BorFramework/2_Module/GameSystemModule/GameSystemModule.cs)
 
@@ -311,7 +327,7 @@ flowchart LR
 
 系统按添加顺序初始化、启动，按逆序停止、释放。跨多个模块组织一项长期运行的业务功能时使用它；简单的一次性流程无需额外创建 System。
 
-### 4.10 FSM：轻量状态机
+### 4.11 FSM：轻量状态机
 
 源码：[`StateMachine.cs`](../Scripts/BorFramework/1_Core/FSM/StateMachine.cs) · [`State.cs`](../Scripts/BorFramework/1_Core/FSM/State.cs)
 
@@ -324,7 +340,7 @@ flowchart LR
 | `Stop()` | 退出当前状态并清空当前引用。 |
 | `Clear()` | `Stop` 后移除全部状态。 |
 
-### 4.11 Log / Save / Config
+### 4.12 Log / Save / Config
 
 - [`ILogModule`](../Scripts/BorFramework/2_Module/LogModule/ILogModule.cs)：`Log`、`Waring`、`Error`，当前直接转发到 `UnityEngine.Debug`。
 - [`ISaveModule`](../Scripts/BorFramework/2_Module/SaveModule/ISaveModule.cs)：当前仅实现空生命周期，尚无存档 API。

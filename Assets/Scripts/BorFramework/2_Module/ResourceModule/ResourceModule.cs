@@ -116,25 +116,6 @@ namespace BorFramework
             return addresses;
         }
 
-        public async UniTask<IInstanceLease> InstantiateAsync(
-            string address,
-            Vector3 position,
-            Quaternion rotation,
-            Transform parent)
-        {
-            IAssetLease<GameObject> assetLease = await LoadAssetAsync<GameObject>(address);
-            if (assetLease == null)
-                return null;
-
-            GameObject instance = Object.Instantiate(assetLease.Asset, position, rotation, parent);
-            if (instance != null)
-                return new InstanceLease(address, instance, assetLease);
-
-            assetLease.Dispose();
-            Debug.LogError($"预制体实例化失败。Address: {address}");
-            return null;
-        }
-
         private IAssetLease<T> CreateLease<T>(string address, AssetHandle handle)
             where T : Object
         {

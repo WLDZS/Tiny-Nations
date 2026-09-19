@@ -3,7 +3,7 @@ using BorFramework;
 
 namespace GameLogic.Units.Skills
 {
-    internal sealed class SkillComp : Comp
+    internal sealed class UnitSkillComp : Comp
     {
         private readonly Dictionary<ESkillSlot, ISkill> _skills = new();
 

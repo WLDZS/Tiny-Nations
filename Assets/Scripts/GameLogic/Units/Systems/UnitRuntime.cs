@@ -1,4 +1,5 @@
 using BorFramework;
+using UnityEngine;
 
 namespace GameLogic.Units
 {
@@ -6,14 +7,18 @@ namespace GameLogic.Units
     {
         public IAssetLease<UnitDefinition> DefinitionLease { get; }
 
-        public IInstanceLease InstanceLease { get; }
+        public GameObject Instance { get; }
+
+        public EntityId? RigidbodyEntityId { get; }
 
         public UnitRuntime(
             IAssetLease<UnitDefinition> definitionLease,
-            IInstanceLease instanceLease)
+            GameObject instance,
+            EntityId? rigidbodyEntityId)
         {
             DefinitionLease = definitionLease;
-            InstanceLease = instanceLease;
+            Instance = instance;
+            RigidbodyEntityId = rigidbodyEntityId;
         }
     }
 }

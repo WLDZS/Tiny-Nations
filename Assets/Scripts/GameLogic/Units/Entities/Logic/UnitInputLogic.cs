@@ -8,7 +8,8 @@ namespace GameLogic.Units.Common
         private readonly IInputModule _inputModule;
         private readonly UnitViewComp _view;
         private readonly UnitCommandComp _command;
-        private readonly SkillComp _skills;
+        private readonly UnitSkillComp _skills;
+        private readonly UnitLifeComp _life;
         private readonly string _moveActionName;
         private readonly string _primarySkillActionName;
         private readonly string _secondarySkillActionName;
@@ -19,7 +20,8 @@ namespace GameLogic.Units.Common
             IInputModule inputModule,
             UnitViewComp view,
             UnitCommandComp command,
-            SkillComp skills,
+            UnitSkillComp skills,
+            UnitLifeComp life,
             string moveActionName,
             string primarySkillActionName,
             string secondarySkillActionName)
@@ -28,6 +30,7 @@ namespace GameLogic.Units.Common
             _view = view;
             _command = command;
             _skills = skills;
+            _life = life;
             _moveActionName = moveActionName;
             _primarySkillActionName = primarySkillActionName;
             _secondarySkillActionName = secondarySkillActionName;
@@ -35,6 +38,13 @@ namespace GameLogic.Units.Common
 
         protected override void OnTick(float dt)
         {
+            if (_life.IsDead)
+            {
+                _command.Clear();
+                _skills.CancelActiveSkill();
+                return;
+            }
+
             _command.SetMoveDirection(_inputModule.ReadVector2(_moveActionName));
 
             if (_inputModule.WasPressedThisFrame(_primarySkillActionName))

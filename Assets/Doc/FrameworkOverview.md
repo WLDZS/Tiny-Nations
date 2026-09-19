@@ -45,7 +45,7 @@ Assets/
 GameBoot
   └─ GameHub：注册、获取、初始化、启停模块
        ├─ 基础服务：Log / Mono / Event / Input
-       ├─ 内容服务：Resource / Scene / UI
+       ├─ 内容服务：Resource / PrefabPool / Scene / UI
        ├─ 业务托管：GameSystem / Entity
        └─ 预留模块：Save / Config
 
@@ -73,11 +73,12 @@ GameLogic
 当前注册顺序为：
 
 ```text
-Log → Mono → Event → Input → Entity → Resource
+Log → Mono → Event → Input → Entity → Resource → PrefabPool
     → Save → Config → Scene → UI → GameSystem
 ```
 
-主要依赖通过构造函数显式传入：`EntityModule` 依赖 `IMonoModule`，`SceneModule` 和 `UIModule` 依赖 `IResourceModule`。
+主要依赖通过构造函数显式传入：`EntityModule` 依赖 `IMonoModule`，`PrefabPoolModule`、`SceneModule` 和
+`UIModule` 依赖 `IResourceModule`。
 
 `BorFramework` 程序集不引用任何具体业务系统。`GameBoot` 位于应用层，可以同时引用框架模块实现和具体业务类型，因此直接创建 `GameFlowSystem`，不需要静态注册表或反射扫描。
 
@@ -120,6 +121,7 @@ var uiModule = GameHub.Ins.GetModule<IUIModule>();
 | `IInputModule` | 按 Action 名读取输入 | `ReadVector2`、`ReadFloat`、`IsPressed`、`WasPressedThisFrame` |
 | `IEntityModule` | 保存 Entity 并驱动其 Logic | `AddEntity`、`RemoveEntity` |
 | `IResourceModule` | 加载 Unity 资源并返回租约 | `LoadAssetAsync<T>`、`LoadAsset<T>`、`State` |
+| `IPrefabPoolModule` | 按资源地址复用 Prefab 实例 | `RentAsync`、`Return` |
 | `ISceneModule` | 按资源地址管理场景 | `LoadSceneAsync`、`UnloadSceneAsync`、`SetActiveScene` |
 | `IUIModule` | UI 注册、实例缓存、绑定与导航 | `Register`、`OpenAsync`、`PushScreenAsync`、`Back` |
 | `IGameSystemModule` | 托管业务系统生命周期 | `AddSystem`、`GetSystem` |
@@ -204,7 +206,37 @@ var instance = UnityEngine.Object.Instantiate(lease.Asset);
 
 资源模块负责加载，业务负责实例化普通 Prefab。租约应覆盖资源实际使用期；释放实例与释放资源引用是两个操作。UI 模块会自行持有其 Prefab 租约。
 
-### 7.2 场景加载
+### 7.2 Prefab 实例池
+
+[`IPrefabPoolModule`](../Scripts/BorFramework/2_Module/PrefabPoolModule/IPrefabPoolModule.cs) 按 Prefab address
+维护独立池桶。每个池桶只持有一个 Prefab 资源租约，租出的 GameObject 在业务完成本次状态初始化前保持未激活。
+
+```csharp
+GameObject instance = await prefabPoolModule.RentAsync(
+    "WarriorBlue",
+    position,
+    rotation,
+    null);
+if (instance == null)
+    return;
+
+// 初始化本次业务状态后再显示。
+instance.SetActive(true);
+
+// 不再使用时归还池桶，而不是销毁实例。
+prefabPoolModule.Return(instance);
+```
+
+池桶使用框架内部的最大空闲数量，按实际峰值增长，不会在创建时预生成实例。框架整体 Dispose 时统一清理全部实例和资源租约。
+
+空闲实例位于常驻池根节点下；租出时会移动到指定父节点所在场景，无父节点时进入当前活动场景，归还后再移回池场景。
+因此场景级业务仍应在卸载场景前归还自己的全部活跃实例。
+
+池模块只复用 Prefab GameObject，不处理血量、技能、队伍等业务状态。业务 System 每次租用时仍应创建自己的运行时对象，
+在 `SetActive(true)` 前完成物理速度、材质属性等可用于未激活对象的状态复位；Animator 必须在激活后立即复位，
+不能对未激活对象调用 `Animator.Play` 或 `Animator.Update`。
+
+### 7.3 场景加载
 
 [`ISceneModule`](../Scripts/BorFramework/2_Module/SceneModule/ISceneModule.cs) 支持 `Single` 替换场景和 `Additive` 叠加场景，返回 `bool` 表示操作结果：
 

@@ -37,6 +37,7 @@ namespace GameLogic.Units
         private bool _isRefreshing;
         private bool _isSpawning;
         private bool _usePlayerInput;
+        private string _teamIdText = "2";
         private int _spawnCount;
         private string _statusMessage = string.Empty;
 
@@ -140,6 +141,10 @@ namespace GameLogic.Units
 
             DrawToolbar();
             _usePlayerInput = GUILayout.Toggle(_usePlayerInput, "生成单位使用玩家输入");
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("TeamId", GUILayout.Width(60f));
+            _teamIdText = GUILayout.TextField(_teamIdText);
+            GUILayout.EndHorizontal();
             GUILayout.Label($"下一个生成位置：{GetNextSpawnPosition()}");
             GUILayout.Space(4f);
 
@@ -328,14 +333,22 @@ namespace GameLogic.Units
             if (_disposed || _isSpawning)
                 return;
 
+            if (!int.TryParse(_teamIdText, out int teamId))
+            {
+                _statusMessage = "生成失败：TeamId 必须是整数。";
+                return;
+            }
+
             _isSpawning = true;
             _statusMessage = $"正在生成 {GetDisplayName(definitionAddress)}...";
             Vector3 spawnPosition = GetNextSpawnPosition();
-            UnitEntity unit = await _unitSystem.SpawnAsync(
+            var spawnRequest = new UnitSpawnRequest(
                 definitionAddress,
                 spawnPosition,
                 Quaternion.identity,
+                teamId,
                 _usePlayerInput);
+            UnitEntity unit = await _unitSystem.SpawnAsync(spawnRequest);
 
             if (_disposed)
             {
@@ -361,6 +374,9 @@ namespace GameLogic.Units
         private static string BuildSpawnStatus(UnitEntity unit, string displayName)
         {
             string status = $"已生成 {displayName}。";
+
+            if (unit.TryGetTeamId(out int teamId))
+                status += $"\nTeamId：{teamId}";
 
             if (unit.TryGetAttributeCurrentValue(
                     EUnitAttributeType.Health,

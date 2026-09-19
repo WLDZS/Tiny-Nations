@@ -30,7 +30,7 @@ namespace GameLogic.Units.Skills
 
         public string AnimationStateName => _animationStateName;
 
-        internal override ISkill CreateSkill()
+        internal override ISkill CreateSkill(in SkillRuntimeContext context)
         {
             return new GuardSkill(this);
         }

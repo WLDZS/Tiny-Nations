@@ -1,16 +1,11 @@
 using BorFramework;
 using Cysharp.Threading.Tasks;
-using UnityEngine;
 
 namespace GameLogic.Units
 {
-    public interface IUnitSystem : IGameSystem
+    public interface IUnitSystem : IGameSystem, IUnitQuery, IUnitRelationResolver
     {
-        UniTask<UnitEntity> SpawnAsync(
-            string definitionAddress,
-            Vector3 position,
-            Quaternion rotation,
-            bool usePlayerInput);
+        UniTask<UnitEntity> SpawnAsync(UnitSpawnRequest request);
 
         bool Despawn(UnitEntity unit);
     }

@@ -57,11 +57,13 @@ namespace GameLogic.GameFlow.States
             if (!IsCurrent(entryVersion))
                 return;
 
-            UnitEntity unit = await _unitSystem.SpawnAsync(
+            var spawnRequest = new UnitSpawnRequest(
                 WarriorBlueDefinitionAddress,
                 Vector3.zero,
                 Quaternion.identity,
+                1,
                 true);
+            UnitEntity unit = await _unitSystem.SpawnAsync(spawnRequest);
 
             if (!IsCurrent(entryVersion))
             {
