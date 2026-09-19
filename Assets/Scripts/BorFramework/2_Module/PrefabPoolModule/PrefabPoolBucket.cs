@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
-using UnityEngine.SceneManagement;
 
 namespace BorFramework
 {
@@ -49,7 +48,6 @@ namespace BorFramework
                 return null;
 
             Transform instanceTransform = instance.transform;
-            MoveToActiveScene(instance, parent);
             instanceTransform.SetParent(parent, false);
             instanceTransform.SetPositionAndRotation(position, rotation);
             instanceTransform.localScale = _prefabLocalScale;
@@ -117,8 +115,6 @@ namespace BorFramework
 
             instance.SetActive(false);
             Transform instanceTransform = instance.transform;
-            instanceTransform.SetParent(null, false);
-            Object.DontDestroyOnLoad(instance);
             instanceTransform.SetParent(_poolRoot, false);
             instanceTransform.localPosition = Vector3.zero;
             instanceTransform.localRotation = Quaternion.identity;
@@ -129,24 +125,6 @@ namespace BorFramework
         {
             if (instance != null)
                 Object.Destroy(instance);
-        }
-
-        private static void MoveToActiveScene(
-            GameObject instance,
-            Transform parent)
-        {
-            Transform instanceTransform = instance.transform;
-            instanceTransform.SetParent(null, false);
-
-            Scene targetScene = parent != null
-                ? parent.gameObject.scene
-                : SceneManager.GetActiveScene();
-            if (targetScene.IsValid()
-                && targetScene.isLoaded
-                && instance.scene != targetScene)
-            {
-                SceneManager.MoveGameObjectToScene(instance, targetScene);
-            }
         }
     }
 }

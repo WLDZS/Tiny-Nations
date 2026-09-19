@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: WarriorBlueMeleeAttack
   m_EditorClassIdentifier: Assembly-CSharp::GameLogic.Units.Skills.MeleeAttackSkillConfig
   _slot: 0
-  _triggerRange: 1.5
   _cooldownSeconds: 0.25
   _querySize: {x: 1.3, y: 1.7}
   _queryOffset: {x: 0.35, y: 0.7}
@@ -22,9 +21,9 @@ MonoBehaviour:
     m_Bits: 128
   _targetRelations: 4
   _hitWindows:
-  - _startTimeSeconds: 0.12
+  - _startTimeSeconds: 0.22
     _durationSeconds: 0.18
-  - _startTimeSeconds: 0.52
+  - _startTimeSeconds: 0.6
     _durationSeconds: 0.18
   _gameEffects:
   - {fileID: 11400000, guid: 778bdb51c790417e80d758eaf07bdf85, type: 2}

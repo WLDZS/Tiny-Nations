@@ -1,6 +1,6 @@
 # Tiny Nations Unit 预制体制作规范
 
-规范版本：`1.11`
+规范版本：`1.12`
 
 本文规定当前项目中可由 `UnitSystem` 加载、由 ELC 驱动并出现在单位调试面板中的 Unit 资产应如何制作。
 它是 Unit 资产制作的唯一事实来源；项目级 Skill 只负责引导 AI 按本文执行，不复制本文内容。
@@ -24,7 +24,7 @@
 - Unit 的 `Rigidbody2D`、身体碰撞与 Hurtbox 配置；
 - 近战查询范围、命中窗口与伤害 `GameEffect`。
 
-本文描述的是当前已经落地的运行时契约。当前实现运行时 TeamId、Self/Ally/Enemy 关系和 Health 归零后的基础死亡回收；不提前设计外交、死亡动画、尸体、复活、寻路或 RTS 控制逻辑。
+本文描述的是当前已经落地的运行时契约。当前实现运行时 TeamId、Self/Ally/Enemy 关系、基础近战自动战斗和 Health 归零后的基础死亡回收；不提前设计外交、死亡动画、尸体、复活、寻路或完整 RTS 命令系统。
 
 ## 2. 核心边界
 
@@ -37,6 +37,7 @@
 7. 属性 SO 只保存共享初始配置；每个生成的单位必须持有独立的运行时属性值，禁止修改共享 SO 表示掉血、耗蓝或临时 Buff。
 8. 战斗队伍是 Unit 实例的运行时数据，由 `UnitSpawnRequest.TeamId` 传入；不要把队伍写死在 Prefab 或 `UnitDefinition` 中，也不要用 Layer 或 Tag 表达敌我关系。
 9. 单位存活状态由通用 `UnitLifeComp` 保存。致死伤害发布一次 `UnitDeathEvent`，停止输入、移动和技能，并由 `UnitSystem` 在当帧 LateUpdate 安全回收；不要在伤害回调中重入销毁 Entity。
+10. 不使用玩家输入且 Primary 槽为 `MeleeAttackSkill` 的 Unit 会获得基础近战 AI；AI 与伤害结算必须复用同一个近战查询框，不维护独立的攻击距离。
 
 ## 3. 每个 Unit 的交付物
 
@@ -100,7 +101,7 @@ Prefab 使用以下表现层级：
 2. `Rigidbody2D` 使用 `Dynamic`、`Gravity Scale = 0`、冻结 Z 轴旋转；像素角色建议开启插值。
 3. 身体 `Collider2D` 不勾选 `Is Trigger`，只表达稳定的单位占地，不跟随武器或攻击动画轮廓变化。
 4. 物理组件存在时，`UnitMovementLogic` 通过刚体速度移动；没有物理组件的旧 Unit 暂时保留 Transform 移动。
-5. 技能触发距离与身体碰撞体是不同概念，不通过放大身体碰撞体表达攻击范围。
+5. 近战可攻击范围由技能 SO 的查询框表达，与身体碰撞体是不同概念；不要通过放大身体碰撞体表达攻击范围。
 
 需要参与伤害判定的 Unit 额外手动添加 Hurtbox：
 
@@ -200,7 +201,6 @@ Resources
 使用 `MeleeAttackSkillConfig`，配置：
 
 - `_slot`；
-- `_triggerRange`；
 - `_cooldownSeconds`；
 - `_querySize`；
 - `_queryOffset`；
@@ -229,6 +229,8 @@ Resources
 - 有效窗口内每个 Tick 都会查询，因此目标在窗口开始后进入范围仍可被命中；
 - 同一个目标在同一个窗口内只命中一次，不同窗口可再次命中。WarriorBlue 当前配置两个窗口，Skull 配置一个窗口；
 - `_gameEffects` 是命中后施加给目标的 Effect 列表，可同时配置瞬时伤害与 DoT。
+
+同一个查询框也用于基础近战 AI 的起手判断：目标 Unit 的 Hurtbox 进入当前朝向下的 `_queryOffset + _querySize` 区域后，AI 停止移动并尝试释放 Primary；目标不在查询框内时继续直线追击。技能冷却只决定能否起手，不会让已经进入查询框的 AI 继续向目标挤压。因此不存在独立的 `_triggerRange`，调整查询框会同时改变实际命中范围和 AI 停步范围。
 
 选中 `MeleeAttackSkillConfig` 时，Inspector 提供攻击范围预览，可指定预览基准、切换左右朝向，并在 Scene 视图中直接调整 Offset 与 Size。蓝色实心矩形表示编辑态查询范围。
 运行攻击时，Scene 视图会实时绘制实心查询矩形。黄色表示攻击正在播放但当前不在命中窗口，红色表示当前处于命中窗口。
@@ -325,6 +327,7 @@ Resources
 - [ ] 移动时播放 Move，停止时回到 Idle。
 - [ ] Primary 按顺序播放全部攻击动画阶段；单段和多段配置均不依赖兵种专属代码。
 - [ ] Primary 的查询范围、偏移、LayerMask、目标关系和全部命中窗口来自技能 SO。
+- [ ] 非玩家控制的近战 Unit 只在目标 Hurtbox 进入同一个技能查询框后停步并尝试攻击，冷却期间不会继续挤向目标。
 - [ ] QueryOffset.x 会随单位左右朝向镜像，实际判定与预览一致。
 - [ ] Scene 视图在编辑态显示蓝色实心查询矩形，运行时窗口外为黄色、窗口内为红色。
 - [ ] Hurtbox 是 `UnitHurtbox` Layer 的 Trigger 子碰撞体，不额外挂刚体。

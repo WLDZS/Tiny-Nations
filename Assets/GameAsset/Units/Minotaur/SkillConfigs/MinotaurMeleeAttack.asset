@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: MinotaurMeleeAttack
   m_EditorClassIdentifier: Assembly-CSharp::GameLogic.Units.Skills.MeleeAttackSkillConfig
   _slot: 0
-  _triggerRange: 1.5
   _cooldownSeconds: 0.25
   _querySize: {x: 3, y: 3}
   _queryOffset: {x: 0, y: 0}

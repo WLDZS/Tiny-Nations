@@ -94,16 +94,33 @@ namespace GameLogic.Units.Skills
 #endif
         }
 
+        public bool IsTargetInRange(in SkillContext context)
+        {
+            if (!context.HasTarget || !CanQueryAttackArea())
+                return false;
+
+            QueryAttackArea();
+            for (int i = 0; i < _overlapResults.Count; i++)
+            {
+                Collider2D hitCollider = _overlapResults[i];
+                if (_runtimeContext.UnitQuery.TryGetUnit(
+                        hitCollider,
+                        out UnitEntity target)
+                    && target == context.Target)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public bool CanTrigger(in SkillContext context)
         {
             if (_animationStateIds.Length == 0 || IsActive || _cooldownTimeRemainingSeconds > 0f)
                 return false;
 
-            if (!context.HasTarget)
-                return true;
-
-            float distance = Vector2.Distance(context.Origin, context.Target.position);
-            return distance <= _config.TriggerRange;
+            return !context.HasTarget || IsTargetInRange(context);
         }
 
         public bool TryStart(in SkillContext context)
@@ -168,13 +185,8 @@ namespace GameLogic.Units.Skills
             float previousElapsedSeconds,
             float currentElapsedSeconds)
         {
-            if (_config.QuerySize.x <= 0f
-                || _config.QuerySize.y <= 0f
-                || _config.HitLayerMask.value == 0
-                || _runtimeContext.UnitQuery == null)
-            {
+            if (!CanQueryAttackArea())
                 return;
-            }
 
             for (int i = 0; i < _hitWindowStartTimesSeconds.Length; i++)
             {
@@ -190,17 +202,7 @@ namespace GameLogic.Units.Skills
 
         private void QueryHitWindow(int hitWindowIndex)
         {
-            var filter = new ContactFilter2D();
-            filter.SetLayerMask(_config.HitLayerMask);
-            filter.useTriggers = true;
-
-            _overlapResults.Clear();
-            Physics2D.OverlapBox(
-                GetQueryCenter(),
-                _config.QuerySize,
-                0f,
-                filter,
-                _overlapResults);
+            QueryAttackArea();
 
             HashSet<UnitEntity> hitUnits = _hitUnitsByWindow[hitWindowIndex];
             for (int i = 0; i < _overlapResults.Count; i++)
@@ -221,6 +223,29 @@ namespace GameLogic.Units.Skills
                 hitUnits.Add(target);
                 ApplyGameEffects(target);
             }
+        }
+
+        private bool CanQueryAttackArea()
+        {
+            return _config.QuerySize.x > 0f
+                   && _config.QuerySize.y > 0f
+                   && _config.HitLayerMask.value != 0
+                   && _runtimeContext.UnitQuery != null;
+        }
+
+        private void QueryAttackArea()
+        {
+            var filter = new ContactFilter2D();
+            filter.SetLayerMask(_config.HitLayerMask);
+            filter.useTriggers = true;
+
+            _overlapResults.Clear();
+            Physics2D.OverlapBox(
+                GetQueryCenter(),
+                _config.QuerySize,
+                0f,
+                filter,
+                _overlapResults);
         }
 
         private bool CanAffectTarget(UnitEntity target)

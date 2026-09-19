@@ -9,11 +9,14 @@ namespace GameLogic.Units.Skills
 
         public Vector3 Origin { get; }
 
-        public Transform Target { get; }
+        public UnitEntity Target { get; }
 
         public bool HasTarget => Target != null;
 
-        public SkillContext(Entity owner, Vector3 origin, Transform target)
+        public SkillContext(
+            Entity owner,
+            Vector3 origin,
+            UnitEntity target)
         {
             Owner = owner;
             Origin = origin;

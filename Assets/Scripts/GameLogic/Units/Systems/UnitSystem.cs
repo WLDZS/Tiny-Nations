@@ -258,6 +258,55 @@ namespace GameLogic.Units
                 out unit);
         }
 
+        public bool TryGetUnitTransform(UnitEntity unit, out Transform transform)
+        {
+            transform = null;
+            if (unit == null
+                || !_units.TryGetValue(unit, out UnitRuntime runtime)
+                || runtime.Instance == null)
+            {
+                return false;
+            }
+
+            transform = runtime.Instance.transform;
+            return true;
+        }
+
+        public bool TryFindClosestEnemy(
+            UnitEntity source,
+            Vector3 origin,
+            float maxDistance,
+            out UnitEntity unit)
+        {
+            unit = null;
+            if (source == null || maxDistance <= 0f)
+                return false;
+
+            float closestDistanceSquared = maxDistance * maxDistance;
+            foreach (KeyValuePair<UnitEntity, UnitRuntime> pair in _units)
+            {
+                UnitEntity candidate = pair.Key;
+                GameObject instance = pair.Value.Instance;
+                if (candidate == null
+                    || candidate.IsDead
+                    || instance == null
+                    || !TryGetRelation(source, candidate, out EUnitRelation relation)
+                    || relation != EUnitRelation.Enemy)
+                {
+                    continue;
+                }
+
+                float distanceSquared = (instance.transform.position - origin).sqrMagnitude;
+                if (distanceSquared > closestDistanceSquared)
+                    continue;
+
+                closestDistanceSquared = distanceSquared;
+                unit = candidate;
+            }
+
+            return unit != null;
+        }
+
         public bool TryGetRelation(
             UnitEntity source,
             UnitEntity target,

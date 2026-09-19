@@ -17,6 +17,11 @@ namespace GameLogic.Units.Skills
             return _skills.TryAdd(slot, skill);
         }
 
+        public bool TryGetSkill(ESkillSlot slot, out ISkill skill)
+        {
+            return _skills.TryGetValue(slot, out skill);
+        }
+
         public bool TryTrigger(ESkillSlot slot, in SkillContext context)
         {
             if (ActiveSkill != null)

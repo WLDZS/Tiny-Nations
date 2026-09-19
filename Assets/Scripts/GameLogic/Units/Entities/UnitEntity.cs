@@ -11,6 +11,7 @@ namespace GameLogic.Units
         private const string MoveActionName = "Move";
         private const string AttackActionName = "Attack";
         private const string GuardActionName = "Crouch";
+        private const float MeleeAIVisionRange = 8f;
 
         public bool IsDead => GetComp<UnitLifeComp>()?.IsDead == true;
 
@@ -94,6 +95,19 @@ namespace GameLogic.Units
                     Debug.LogWarning($"单位技能槽重复，已忽略：{config.Slot}", gameObject);
             }
 
+            UnitAIComp ai = null;
+            MeleeAttackSkill meleeAttackSkill = null;
+            if (!usePlayerInput
+                && skills.TryGetSkill(ESkillSlot.Primary, out ISkill primarySkill)
+                && primarySkill is MeleeAttackSkill configuredMeleeAttackSkill)
+            {
+                meleeAttackSkill = configuredMeleeAttackSkill;
+                ai = new UnitAIComp(MeleeAIVisionRange)
+                {
+                    Entity = this
+                };
+            }
+
             AddComp(command);
             AddComp(view);
             AddComp(attributes);
@@ -101,6 +115,9 @@ namespace GameLogic.Units
             AddComp(team);
             AddComp(skills);
             AddComp(effects);
+
+            if (ai != null)
+                AddComp(ai);
 
             if (physics != null)
                 AddComp(physics);
@@ -117,6 +134,19 @@ namespace GameLogic.Units
                     AttackActionName,
                     GuardActionName));
             }
+            else if (ai != null)
+            {
+                AddLogic(new UnitMeleeAILogic(
+                    this,
+                    ai,
+                    view,
+                    command,
+                    skills,
+                    life,
+                    meleeAttackSkill,
+                    unitQuery));
+            }
+
             AddLogic(new UnitMovementLogic(
                 view,
                 command,

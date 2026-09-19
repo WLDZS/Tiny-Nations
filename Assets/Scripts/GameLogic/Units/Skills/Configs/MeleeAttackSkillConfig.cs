@@ -12,10 +12,6 @@ namespace GameLogic.Units.Skills
     {
         [SerializeField]
         [Min(0f)]
-        private float _triggerRange = 1.5f;
-
-        [SerializeField]
-        [Min(0f)]
         private float _cooldownSeconds = 0.25f;
 
         [SerializeField]
@@ -38,8 +34,6 @@ namespace GameLogic.Units.Skills
 
         [SerializeField]
         private SkillAnimationStage[] _animationStages = Array.Empty<SkillAnimationStage>();
-
-        public float TriggerRange => _triggerRange;
 
         public float CooldownSeconds => _cooldownSeconds;
 
