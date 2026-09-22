@@ -13,6 +13,8 @@ namespace GameLogic.Units.Common
         private readonly UnitSkillComp _skills;
         private readonly int _idleStateId;
         private readonly int _moveStateId;
+        private ISkill _lastSkill;
+        private int _lastAnimationVersion;
 
         public override ELogicPhase Phase => ELogicPhase.Presentation;
 
@@ -30,19 +32,26 @@ namespace GameLogic.Units.Common
             _moveStateId = Animator.StringToHash(moveStateName);
         }
 
-        public override void OnStart()
+        protected override void OnStart()
         {
+            _lastSkill = null;
             Play(_idleStateId, true);
         }
 
         protected override void OnTick(float dt)
         {
-            if (_skills.ActiveSkill != null)
+            ISkill activeSkill = _skills.ActiveSkill;
+            if (activeSkill != null)
             {
-                Play(_skills.ActiveSkill.AnimationStateId);
+                bool restartAnimation = _lastSkill != activeSkill
+                                        || _lastAnimationVersion != activeSkill.AnimationVersion;
+                _lastSkill = activeSkill;
+                _lastAnimationVersion = activeSkill.AnimationVersion;
+                Play(activeSkill.AnimationStateId, restartAnimation);
                 return;
             }
 
+            _lastSkill = null;
             int stateId = _command.MoveDirection.sqrMagnitude > MoveInputEpsilon
                 ? _moveStateId
                 : _idleStateId;
@@ -50,13 +59,17 @@ namespace GameLogic.Units.Common
             Play(stateId);
         }
 
-        public override void OnStop()
+        protected override void OnStop()
         {
+            _lastSkill = null;
             Play(_idleStateId, true);
         }
 
         private void Play(int stateId, bool force = false)
         {
+            if (_view.Animator == null || !_view.Animator.isActiveAndEnabled)
+                return;
+
             if (!force && _view.CurrentAnimationStateId == stateId)
                 return;
 

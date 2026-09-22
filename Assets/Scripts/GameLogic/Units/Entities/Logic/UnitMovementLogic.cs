@@ -70,12 +70,7 @@ namespace GameLogic.Units.Common
                 _view.SpriteRenderer.flipX = true;
         }
 
-        public override void OnStop()
-        {
-            StopPhysicsMovement();
-        }
-
-        public override void Dispose()
+        protected override void OnStop()
         {
             StopPhysicsMovement();
         }

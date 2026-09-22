@@ -49,7 +49,13 @@ namespace GameLogic.Units.Common
             SetFlashAmount(1f);
         }
 
-        public override void Dispose()
+        protected override void OnStop()
+        {
+            _remainingSeconds = 0f;
+            ClearFlashOverride();
+        }
+
+        protected override void OnDispose()
         {
             ClearFlashOverride();
         }

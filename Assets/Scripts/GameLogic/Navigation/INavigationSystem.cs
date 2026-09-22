@@ -17,7 +17,10 @@ namespace GameLogic.Navigation
         /// <param name="navigationAnchorOffset">World-space offset from the unit root to its navigation center.</param>
         /// <param name="clearanceRadius">Navigation-center clearance radius in world units.</param>
         /// <param name="waypoints">Caller-owned output list of unit-root world positions.</param>
-        /// <returns>A result describing whether and why the request completed.</returns>
+        /// <returns>
+        /// A result describing whether and why the request completed.
+        /// Successful paths avoid blocked cells and end at the exact requested destination.
+        /// </returns>
         EPathQueryStatus FindPath(
             Vector2 startWorldPosition,
             Vector2 destinationWorldPosition,

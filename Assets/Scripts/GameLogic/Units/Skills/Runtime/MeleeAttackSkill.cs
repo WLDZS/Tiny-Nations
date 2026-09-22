@@ -25,6 +25,8 @@ namespace GameLogic.Units.Skills
 
         public int AnimationStateId { get; private set; }
 
+        public int AnimationVersion { get; private set; }
+
         public bool BlocksMovement => true;
 
         public bool IsActive => _activeTimeRemainingSeconds > 0f;
@@ -37,57 +39,35 @@ namespace GameLogic.Units.Skills
             _runtimeContext = runtimeContext;
 
             IReadOnlyList<SkillAnimationStage> stages = config.AnimationStages;
-            var animationStateIds = new List<int>(stages.Count);
-            var stageEndTimesSeconds = new List<float>(stages.Count);
+            _animationStateIds = new int[stages.Count];
+            _stageEndTimesSeconds = new float[stages.Count];
             float durationSeconds = 0f;
 
             for (int i = 0; i < stages.Count; i++)
             {
                 SkillAnimationStage stage = stages[i];
-                if (stage == null
-                    || string.IsNullOrWhiteSpace(stage.StateName)
-                    || stage.DurationSeconds <= 0f)
-                {
-                    continue;
-                }
-
                 durationSeconds += stage.DurationSeconds;
-                animationStateIds.Add(Animator.StringToHash(stage.StateName));
-                stageEndTimesSeconds.Add(durationSeconds);
+                _animationStateIds[i] = Animator.StringToHash(stage.StateName);
+                _stageEndTimesSeconds[i] = durationSeconds;
             }
 
-            _animationStateIds = animationStateIds.ToArray();
-            _stageEndTimesSeconds = stageEndTimesSeconds.ToArray();
             _durationSeconds = durationSeconds;
-            AnimationStateId = _animationStateIds.Length > 0 ? _animationStateIds[0] : 0;
+            AnimationStateId = _animationStateIds[0];
 
             IReadOnlyList<SkillHitWindow> hitWindows = config.HitWindows;
-            var hitWindowStartTimesSeconds = new List<float>(hitWindows.Count);
-            var hitWindowEndTimesSeconds = new List<float>(hitWindows.Count);
+            _hitWindowStartTimesSeconds = new float[hitWindows.Count];
+            _hitWindowEndTimesSeconds = new float[hitWindows.Count];
+            _hitUnitsByWindow = new HashSet<UnitEntity>[hitWindows.Count];
 
             for (int i = 0; i < hitWindows.Count; i++)
             {
                 SkillHitWindow hitWindow = hitWindows[i];
-                if (hitWindow == null
-                    || hitWindow.StartTimeSeconds < 0f
-                    || hitWindow.DurationSeconds <= 0f
-                    || hitWindow.StartTimeSeconds >= _durationSeconds)
-                {
-                    continue;
-                }
-
-                hitWindowStartTimesSeconds.Add(hitWindow.StartTimeSeconds);
-                hitWindowEndTimesSeconds.Add(Mathf.Min(
+                _hitWindowStartTimesSeconds[i] = hitWindow.StartTimeSeconds;
+                _hitWindowEndTimesSeconds[i] = Mathf.Min(
                     hitWindow.StartTimeSeconds + hitWindow.DurationSeconds,
-                    _durationSeconds));
-            }
-
-            _hitWindowStartTimesSeconds = hitWindowStartTimesSeconds.ToArray();
-            _hitWindowEndTimesSeconds = hitWindowEndTimesSeconds.ToArray();
-            _hitUnitsByWindow = new HashSet<UnitEntity>[_hitWindowStartTimesSeconds.Length];
-
-            for (int i = 0; i < _hitUnitsByWindow.Length; i++)
+                    _durationSeconds);
                 _hitUnitsByWindow[i] = new HashSet<UnitEntity>();
+            }
 
 #if UNITY_EDITOR
             _debugRangeId = MeleeAttackDebugRangeRegistry.CreateId();
@@ -133,6 +113,7 @@ namespace GameLogic.Units.Skills
             _cooldownTimeRemainingSeconds = _config.CooldownSeconds;
             _animationStageIndex = 0;
             AnimationStateId = _animationStateIds[0];
+            AnimationVersion++;
 
             for (int i = 0; i < _hitUnitsByWindow.Length; i++)
                 _hitUnitsByWindow[i].Clear();
@@ -160,6 +141,7 @@ namespace GameLogic.Units.Skills
                 {
                     _animationStageIndex++;
                     AnimationStateId = _animationStateIds[_animationStageIndex];
+                    AnimationVersion++;
                 }
             }
 

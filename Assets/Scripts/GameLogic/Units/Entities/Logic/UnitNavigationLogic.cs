@@ -34,7 +34,6 @@ namespace GameLogic.Units.Common
         private Vector2 _plannedDestination;
         private Vector2 _waypointApproachStart;
         private EUnitNavigationState _stateBeforePause;
-        private bool _hasProgressSample;
         private bool _issuedMoveIntentLastTick;
 
         public override ELogicPhase Phase => ELogicPhase.Navigation;
@@ -61,6 +60,8 @@ namespace GameLogic.Units.Common
 
         protected override void OnTick(float dt)
         {
+            // 每帧默认停止，只有取得可跟随路径点后才输出方向。
+            _command.Clear();
             if (_life.IsDead || _view.Transform == null || !_navigation.HasDestination)
             {
                 EnterIdle();
@@ -80,107 +81,55 @@ namespace GameLogic.Units.Common
             ResumeFromPause();
             _destinationRepathCooldownRemainingSeconds -= Mathf.Max(0f, dt);
 
-            if (_navigation.State == EUnitNavigationState.Idle)
+            if (NeedsPath())
             {
-                if (!TryBuildPath(currentPosition))
-                    return;
-            }
-            else if (_navigation.State == EUnitNavigationState.Arrived
-                     || _navigation.State == EUnitNavigationState.Blocked)
-            {
-                if (!HasDestinationChangedEnough())
-                {
-                    _command.Clear();
-                    return;
-                }
-
-                _recoveryAttempts = 0;
-                if (!TryBuildPath(currentPosition))
-                    return;
-            }
-            else if (_navigation.State == EUnitNavigationState.Following
-                     && _destinationRepathCooldownRemainingSeconds <= 0f
-                     && HasDestinationChangedEnough())
-            {
-                _recoveryAttempts = 0;
-                if (!TryBuildPath(currentPosition))
-                    return;
+                // 同请求从 Stop 恢复时也会进入 Idle，不能因此补回恢复次数。
+                if (_navigation.State != EUnitNavigationState.Idle)
+                    _recoveryAttempts = 0;
+                BuildPath(currentPosition);
             }
 
-            if (_navigation.State != EUnitNavigationState.Following)
-            {
-                _command.Clear();
-                return;
-            }
-
-            SkipReachedWaypoints(currentPosition);
-            if (_waypointIndex >= _waypoints.Count)
-            {
-                if (HasArrivedAtDestination(currentPosition))
-                {
-                    EnterArrived();
-                    return;
-                }
-
-                if (!TryRecover(
-                        currentPosition,
-                        EUnitNavigationBlockReason.PathEndedBeforeDestination))
-                {
-                    return;
-                }
-
-                SkipReachedWaypoints(currentPosition);
-            }
-
-            if (_waypointIndex >= _waypoints.Count)
-            {
-                EnterBlocked(EUnitNavigationBlockReason.PathEndedBeforeDestination);
-                return;
-            }
-
-            if (IsStuck(currentPosition, dt))
-            {
-                if (!TryRecover(currentPosition, EUnitNavigationBlockReason.NoProgress))
-                    return;
-
-                SkipReachedWaypoints(currentPosition);
-                if (_waypointIndex >= _waypoints.Count)
-                {
-                    EnterBlocked(EUnitNavigationBlockReason.PathEndedBeforeDestination);
-                    return;
-                }
-            }
-
-            Vector2 direction = _waypoints[_waypointIndex] - currentPosition;
-            _command.SetMoveDirection(direction.normalized);
-            _issuedMoveIntentLastTick = direction.sqrMagnitude > Mathf.Epsilon;
+            if (_navigation.State == EUnitNavigationState.Following)
+                FollowPath(currentPosition, dt);
         }
 
-        public override void OnStop()
+        protected override void OnStop()
         {
             EnterIdle();
-        }
-
-        public override void Dispose()
-        {
-            EnterIdle();
+            _command.Clear();
         }
 
         private void ResetForNewRequest()
         {
             _observedRequestVersion = _navigation.RequestVersion;
             _recoveryAttempts = 0;
-            ClearPath();
-            _navigation.ResetExecutionState();
+            EnterIdle();
         }
 
-        private bool TryBuildPath(Vector2 currentPosition)
+        private bool NeedsPath()
+        {
+            switch (_navigation.State)
+            {
+                case EUnitNavigationState.Idle:
+                    return true;
+                case EUnitNavigationState.Following:
+                    return _destinationRepathCooldownRemainingSeconds <= 0f
+                           && HasDestinationChangedEnough();
+                case EUnitNavigationState.Arrived:
+                case EUnitNavigationState.Blocked:
+                    return HasDestinationChangedEnough();
+                default:
+                    return false;
+            }
+        }
+
+        private void BuildPath(Vector2 currentPosition)
         {
             _plannedDestination = _navigation.Destination;
             if (HasArrivedAtDestination(currentPosition))
             {
                 EnterArrived();
-                return false;
+                return;
             }
 
             EPathQueryStatus pathStatus = _navigationSystem != null
@@ -195,36 +144,75 @@ namespace GameLogic.Units.Common
             if (pathStatus != EPathQueryStatus.Success)
             {
                 EnterBlocked(EUnitNavigationBlockReason.PathQueryFailed);
-                return false;
+                return;
             }
 
             if (_waypoints.Count == 0)
             {
                 EnterBlocked(EUnitNavigationBlockReason.PathEndedBeforeDestination);
-                return false;
+                return;
             }
 
             _waypointIndex = 0;
             _waypointApproachStart = currentPosition;
             _destinationRepathCooldownRemainingSeconds = DestinationRepathCooldownSeconds;
-            _navigation.ClearBlockReason();
-            _navigation.SetState(EUnitNavigationState.Following);
+            _navigation.SetExecutionState(EUnitNavigationState.Following);
             ResetProgressTracking();
-            return true;
         }
 
-        private bool TryRecover(
+        private void FollowPath(Vector2 currentPosition, float dt)
+        {
+            SkipReachedWaypoints(currentPosition);
+            var recoveryReason = EUnitNavigationBlockReason.None;
+            if (_waypointIndex >= _waypoints.Count)
+            {
+                if (HasArrivedAtDestination(currentPosition))
+                {
+                    EnterArrived();
+                    return;
+                }
+
+                recoveryReason = EUnitNavigationBlockReason.PathEndedBeforeDestination;
+            }
+            else if (IsStuck(currentPosition, dt))
+            {
+                recoveryReason = EUnitNavigationBlockReason.NoProgress;
+            }
+
+            if (recoveryReason != EUnitNavigationBlockReason.None)
+            {
+                RecoverPath(currentPosition, recoveryReason);
+                if (_navigation.State != EUnitNavigationState.Following)
+                    return;
+
+                SkipReachedWaypoints(currentPosition);
+                if (_waypointIndex >= _waypoints.Count)
+                {
+                    EnterBlocked(EUnitNavigationBlockReason.PathEndedBeforeDestination);
+                    return;
+                }
+
+                // 建好路径只重建进度样本，实际前进后才恢复重试次数。
+                ResetProgressSample(currentPosition);
+            }
+
+            Vector2 direction = _waypoints[_waypointIndex] - currentPosition;
+            _command.SetMoveDirection(direction.normalized);
+            _issuedMoveIntentLastTick = direction.sqrMagnitude > Mathf.Epsilon;
+        }
+
+        private void RecoverPath(
             Vector2 currentPosition,
             EUnitNavigationBlockReason exhaustedReason)
         {
             if (_recoveryAttempts >= MaximumRecoveryAttempts)
             {
                 EnterBlocked(exhaustedReason);
-                return false;
+                return;
             }
 
             _recoveryAttempts++;
-            return TryBuildPath(currentPosition);
+            BuildPath(currentPosition);
         }
 
         private void SkipReachedWaypoints(Vector2 currentPosition)
@@ -259,12 +247,6 @@ namespace GameLogic.Units.Common
             float distanceToWaypoint = Vector2.Distance(
                 currentPosition,
                 _waypoints[_waypointIndex]);
-            if (!_hasProgressSample)
-            {
-                ResetProgressSample(currentPosition);
-                return false;
-            }
-
             if (_progressSampleDistanceToWaypoint - distanceToWaypoint
                 >= MinimumProgressDistance)
             {
@@ -283,18 +265,16 @@ namespace GameLogic.Units.Common
 
         private void ResetProgressSample(Vector2 currentPosition)
         {
-            _progressSampleDistanceToWaypoint = _waypointIndex < _waypoints.Count
-                ? Vector2.Distance(currentPosition, _waypoints[_waypointIndex])
-                : 0f;
+            _progressSampleDistanceToWaypoint = Vector2.Distance(
+                currentPosition,
+                _waypoints[_waypointIndex]);
             _stuckTimeSeconds = 0f;
-            _hasProgressSample = true;
         }
 
         private void ResetProgressTracking()
         {
             _stuckTimeSeconds = 0f;
             _progressSampleDistanceToWaypoint = 0f;
-            _hasProgressSample = false;
             _issuedMoveIntentLastTick = false;
         }
 
@@ -318,10 +298,9 @@ namespace GameLogic.Units.Common
             if (_navigation.State != EUnitNavigationState.Paused)
             {
                 _stateBeforePause = _navigation.State;
-                _navigation.SetState(EUnitNavigationState.Paused);
+                _navigation.SetExecutionState(EUnitNavigationState.Paused, _navigation.BlockReason);
             }
 
-            _command.Clear();
             ResetProgressTracking();
         }
 
@@ -330,7 +309,7 @@ namespace GameLogic.Units.Common
             if (_navigation.State != EUnitNavigationState.Paused)
                 return;
 
-            _navigation.SetState(_stateBeforePause);
+            _navigation.SetExecutionState(_stateBeforePause, _navigation.BlockReason);
             ResetProgressTracking();
         }
 
@@ -338,23 +317,19 @@ namespace GameLogic.Units.Common
         {
             _plannedDestination = _navigation.Destination;
             ClearPath();
-            _navigation.ClearBlockReason();
-            _navigation.SetState(EUnitNavigationState.Arrived);
-            _command.Clear();
+            _navigation.SetExecutionState(EUnitNavigationState.Arrived);
         }
 
         private void EnterBlocked(EUnitNavigationBlockReason reason)
         {
             ClearPath();
-            _navigation.SetBlocked(reason);
-            _command.Clear();
+            _navigation.SetExecutionState(EUnitNavigationState.Blocked, reason);
         }
 
         private void EnterIdle()
         {
             ClearPath();
-            _navigation.ResetExecutionState();
-            _command.Clear();
+            _navigation.SetExecutionState(EUnitNavigationState.Idle);
         }
 
         private void ClearPath()

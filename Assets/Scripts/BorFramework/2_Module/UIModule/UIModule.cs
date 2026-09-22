@@ -11,6 +11,7 @@ namespace BorFramework
         private readonly Stack<Type> _screenStack = new();
         private readonly Stack<Type> _windowStack = new();
         private readonly IResourceModule _resourceModule;
+        private int _navigationVersion;
 
         public UIRoot UIRoot { get; private set; }
 
@@ -32,6 +33,7 @@ namespace BorFramework
 
         public void Stop()
         {
+            _navigationVersion++;
             _windowStack.Clear();
             _screenStack.Clear();
 
@@ -82,36 +84,35 @@ namespace BorFramework
                 return null;
             }
 
-            entry.OpenRequested = true;
+            if (entry.Layer == EUILayer.Screen)
+                return await PushScreenAsync<TView>();
+
+            if (entry.Layer == EUILayer.Window)
+                return await OpenWindowAsync<TView>();
+
+            int requestVersion = ++entry.OpenVersion;
             var view = await LoadViewAsync(entry);
-            if (view == null || !entry.OpenRequested)
+            if (!IsRequestCurrent(entry, view, requestVersion))
                 return null;
 
-            if (!entry.IsOpen)
-            {
-                entry.ViewModel.OnOpen();
-                if (!view.BindViewModel(entry.ViewModel))
-                {
-                    entry.ViewModel.OnClose();
-                    Debug.LogError($"UI ViewModel 类型不匹配：{typeof(TView).Name}");
-                    return null;
-                }
-
-                entry.IsOpen = true;
-                view.gameObject.SetActive(true);
-            }
-
-            return view as TView;
+            return OpenEntry(entry, view) ? view as TView : null;
         }
 
         public async UniTask<TView> PushScreenAsync<TView>() where TView : UIViewBase
         {
-            if (!TryGetEntry<TView>(EUILayer.Screen, out var entry))
+            if (!TryGetEntry<TView>(EUILayer.Screen, out var entry)
+                || _screenStack.Contains(typeof(TView)))
                 return null;
 
-            var view = await OpenAsync<TView>();
-            if (view == null || !entry.IsOpen || _screenStack.Contains(typeof(TView)))
-                return view;
+            int navigationVersion = ++_navigationVersion;
+            int requestVersion = ++entry.OpenVersion;
+            var view = await LoadViewAsync(entry);
+            if (navigationVersion != _navigationVersion
+                || !IsRequestCurrent(entry, view, requestVersion)
+                || !OpenEntry(entry, view))
+            {
+                return null;
+            }
 
             while (_windowStack.Count > 0)
             {
@@ -121,22 +122,37 @@ namespace BorFramework
             }
 
             if (_screenStack.Count > 0 && _elements.TryGetValue(_screenStack.Peek(), out var current))
+            {
                 current.ViewModel?.OnPause();
+                current.View.gameObject.SetActive(false);
+            }
 
             _screenStack.Push(typeof(TView));
-            return view;
+            return view as TView;
         }
 
         public async UniTask<TView> OpenWindowAsync<TView>() where TView : UIViewBase
         {
-            if (_screenStack.Count == 0 || !TryGetEntry<TView>(EUILayer.Window, out var entry))
+            if (_screenStack.Count == 0
+                || !TryGetEntry<TView>(EUILayer.Window, out var entry)
+                || _windowStack.Contains(typeof(TView)))
                 return null;
 
-            var view = await OpenAsync<TView>();
-            if (view != null && entry.IsOpen && !_windowStack.Contains(typeof(TView)))
-                _windowStack.Push(typeof(TView));
+            Type ownerScreen = _screenStack.Peek();
+            int navigationVersion = _navigationVersion;
+            int requestVersion = ++entry.OpenVersion;
+            var view = await LoadViewAsync(entry);
+            if (navigationVersion != _navigationVersion
+                || _screenStack.Count == 0
+                || _screenStack.Peek() != ownerScreen
+                || !IsRequestCurrent(entry, view, requestVersion)
+                || !OpenEntry(entry, view))
+            {
+                return null;
+            }
 
-            return view;
+            _windowStack.Push(typeof(TView));
+            return view as TView;
         }
 
         public void Close<TView>() where TView : UIViewBase
@@ -147,6 +163,7 @@ namespace BorFramework
 
             if (_windowStack.Count > 0 && _windowStack.Peek() == viewType)
             {
+                _navigationVersion++;
                 _windowStack.Pop();
                 CloseEntry(entry);
                 return;
@@ -157,6 +174,9 @@ namespace BorFramework
                 PopScreen();
                 return;
             }
+
+            if (entry.Layer == EUILayer.Screen || entry.Layer == EUILayer.Window)
+                _navigationVersion++;
 
             RemoveFromStack(_windowStack, viewType);
             RemoveFromStack(_screenStack, viewType);
@@ -193,6 +213,7 @@ namespace BorFramework
 
         public bool PopScreen()
         {
+            _navigationVersion++;
             if (_screenStack.Count == 0)
                 return false;
 
@@ -208,7 +229,10 @@ namespace BorFramework
                 CloseEntry(screen);
 
             if (_screenStack.Count > 0 && _elements.TryGetValue(_screenStack.Peek(), out var previous))
+            {
                 previous.ViewModel?.OnResume();
+                previous.View.gameObject.SetActive(true);
+            }
 
             return true;
         }
@@ -217,6 +241,7 @@ namespace BorFramework
         {
             if (_windowStack.Count > 0)
             {
+                _navigationVersion++;
                 var windowType = _windowStack.Pop();
                 if (_elements.TryGetValue(windowType, out var window))
                     CloseEntry(window);
@@ -255,7 +280,7 @@ namespace BorFramework
             if (lease == null)
                 return null;
 
-            if (entry.IsDestroyed)
+            if (entry.IsDestroyed || UIRoot == null || parent == null)
             {
                 lease.Dispose();
                 return null;
@@ -296,9 +321,33 @@ namespace BorFramework
             return false;
         }
 
+        private static bool IsRequestCurrent(UIEntry entry, UIViewBase view, int requestVersion)
+        {
+            return view != null && !entry.IsDestroyed && entry.OpenVersion == requestVersion;
+        }
+
+        private static bool OpenEntry(UIEntry entry, UIViewBase view)
+        {
+            if (entry.IsOpen)
+                return true;
+
+            entry.ViewModel.OnOpen();
+            if (!view.BindViewModel(entry.ViewModel))
+            {
+                entry.ViewModel.OnClose();
+                Debug.LogError($"UI ViewModel 类型不匹配：{entry.ViewType.Name}");
+                return false;
+            }
+
+            entry.IsOpen = true;
+            view.transform.SetAsLastSibling();
+            view.gameObject.SetActive(true);
+            return true;
+        }
+
         private static void CloseEntry(UIEntry entry)
         {
-            entry.OpenRequested = false;
+            entry.OpenVersion++;
             if (!entry.IsOpen || entry.View == null)
                 return;
 
@@ -350,9 +399,9 @@ namespace BorFramework
             public UIViewModelBase ViewModel;
             public IAssetLease<GameObject> Lease;
             public UniTask<UIViewBase> LoadTask;
+            public int OpenVersion;
             public bool IsLoading;
             public bool IsOpen;
-            public bool OpenRequested;
             public bool IsDestroyed;
 
             public UIEntry(

@@ -2,6 +2,8 @@
 
 > 面向日常开发的快速入口。本文按当前工作区代码整理，API 以接口文件为准，业务接入参考 `Assets/Scripts/GameLogic/GameFlow` 与 `MainMenu`。
 
+本次仅核对源码与文档，未运行编译、Play Mode 或视觉验收。
+
 ## 1. 一图定位框架
 
 ```mermaid
@@ -23,8 +25,7 @@ flowchart TB
         Input["IInputModule<br/>输入读取"]
         Entity["IEntityModule<br/>实体更新与回收"]
         Resource["IResourceModule<br/>YooAsset 资源租约"]
-        Save["ISaveModule<br/>存档（待实现）"]
-        Config["IConfigModule<br/>配置（待实现）"]
+        Pool["IPrefabPoolModule<br/>Prefab 实例与资源租约"]
         Scene["ISceneModule<br/>场景加载与卸载"]
         UI["IUIModule<br/>UI 注册、加载、导航"]
         System["IGameSystemModule<br/>业务系统生命周期"]
@@ -34,7 +35,7 @@ flowchart TB
     InputSystem["Unity Input System"]
 
     Boot --> Hub
-    Hub --> Log & Mono & Event & Input & Entity & Resource & Pool & Save & Config & Scene & UI & System
+    Hub --> Log & Mono & Event & Input & Entity & Resource & Pool & Scene & UI & System
     Entity -->|订阅 OnUpdate| Mono
     Scene --> Resource
     UI --> Resource
@@ -51,12 +52,12 @@ flowchart TB
 
 - `1_Core`：不面向具体业务的基础结构，如 Hub、ELC、FSM、单例。
 - `2_Module`：由 `GameHub` 托管生命周期的服务模块，业务代码优先依赖 `I...Module` 接口。
-- `3_Boot`：框架自动启动、模块注册和 Unity 帧回调转发。
-- `GameLogic`：项目业务代码；当前正式入口由 `GameFlow` 组织，具体界面放在对应功能目录。
+- `3_Boot`：Boot 场景的编辑器辅助。
+- `GameLogic`：项目业务代码；GameBoot 负责自动启动、模块注册与帧转发，正式流程由 GameFlow 组织。
 
 ## 2. 最常用入口
 
-业务代码统一从 `GameHub` 获取模块：
+应用入口可按注册接口从 `GameHub` 获取模块，再通过构造函数注入具体业务：
 
 ```csharp
 var resourceModule = GameHub.Ins.GetModule<IResourceModule>();
@@ -75,11 +76,9 @@ var uiModule = GameHub.Ins.GetModule<IUIModule>();
 | 读取 Input Action | `IInputModule` | `ReadVector2` / `ReadFloat` / `IsPressed` | [`IInputModule.cs`](../Scripts/BorFramework/2_Module/InputModule/IInputModule.cs) |
 | 订阅 Unity 帧循环 | `IMonoModule` | `OnFixUpdate` / `OnUpdate` / `OnLateUpdate` | [`IMonoModule.cs`](../Scripts/BorFramework/2_Module/MonoModule/IMonoModule.cs) |
 | 注册实体并驱动其 Logic | `IEntityModule` + `Entity` | `AddEntity` / `RemoveEntity` | [`IEntityModule.cs`](../Scripts/BorFramework/2_Module/EntityModule/IEntityModule.cs) |
-| 托管一个业务系统 | `IGameSystemModule` + `IGameSystem` | `AddSystem` / `GetSystem` | [`IGameSystemModule.cs`](../Scripts/BorFramework/2_Module/GameSystemModule/IGameSystemModule.cs) |
+| 托管一个业务系统 | `IGameSystemModule` + `IGameSystem` | `AddSystem` / `GetSystem` / `RemoveSystem` | [`IGameSystemModule.cs`](../Scripts/BorFramework/2_Module/GameSystemModule/IGameSystemModule.cs) |
 | 建立状态机 | `StateMachine` + `State` | `AddState` / `ChangeState<T>` / `Update` | [`StateMachine.cs`](../Scripts/BorFramework/1_Core/FSM/StateMachine.cs) |
 | 输出日志 | `ILogModule` | `Log` / `Waring` / `Error` | [`ILogModule.cs`](../Scripts/BorFramework/2_Module/LogModule/ILogModule.cs) |
-| 存档 | `ISaveModule` | 当前仅有生命周期，无业务 API | [`ISaveModule.cs`](../Scripts/BorFramework/2_Module/SaveModule/ISaveModule.cs) |
-| 配置 | `IConfigModule` | 当前仅有生命周期，无业务 API | [`IConfigModule.cs`](../Scripts/BorFramework/2_Module/ConfigModule/IConfigModule.cs) |
 
 > `ILogModule.Waring` 是当前代码中的真实拼写，调用时不要写成 `Warning`。
 
@@ -97,7 +96,7 @@ sequenceDiagram
     Unity->>Boot: BeforeSceneLoad 自动创建
     Boot->>Hub: Init()
     Boot->>Hub: RegisterModule<T>()
-    Boot->>Module: AddSystem(GameFlowSystem)
+    Boot->>Module: AddSystem(Navigation / Unit / GameFlow)
     Boot->>Hub: InitModules()
     Hub->>Module: Init()（注册顺序）
     Module->>GameFlow: Init()
@@ -124,13 +123,13 @@ sequenceDiagram
 5. `IEntityModule`
 6. `IResourceModule`
 7. `IPrefabPoolModule`
-8. `ISaveModule`
-9. `IConfigModule`
-10. `ISceneModule`
-11. `IUIModule`
-12. `IGameSystemModule`
+8. `ISceneModule`
+9. `IUIModule`
+10. `IGameSystemModule`
 
 所有模块实现统一生命周期 [`IModule`](../Scripts/BorFramework/1_Core/Hub/IModule.cs)：`Init → Start → Stop → Dispose`。新增模块时，接口应继承 `IModule`，实现放在 `2_Module` 对应目录，并在 `GameBoot.Init()` 中按依赖顺序注册。
+
+`FrameworkReadyEvent` 只表示模块启动流程已执行，不表示 YooAsset 或首个场景已加载完成。全程业务 System 按 Navigation、Unit、GameFlow 顺序装配。
 
 ## 4. 模块 API 速查
 
@@ -219,14 +218,16 @@ flowchart LR
 | API | 用途 / 约束 |
 | --- | --- |
 | `Register<TView,TViewModel>(address, layer, factory, subLayer)` | 使用 View 类型作为唯一键；打开前必须注册。 |
-| `OpenAsync<TView>()` | 打开任意已注册 UI，不改变 Screen / Window 导航栈。 |
-| `PushScreenAsync<TView>()` | 仅接受 `EUILayer.Screen`；暂停前一 Screen，并关闭所有 Window。 |
-| `OpenWindowAsync<TView>()` | 仅接受 `EUILayer.Window`，并要求 Screen 栈非空。 |
+| `OpenAsync<TView>()` | Screen/Window 分别转入对应导航 API；其他层直接打开。 |
+| `PushScreenAsync<TView>()` | 仅接受 Screen；加载成功后暂停并隐藏前一页面、关闭所有窗口再入栈；栈中同类型页面返回 `null`。 |
+| `OpenWindowAsync<TView>()` | 仅接受 Window，要求 Screen 非空且栈中无同类型窗口；过期或被关闭的请求返回 `null`。 |
 | `Close<TView>()` | 关闭指定 UI，并同步清理它所在的导航栈。 |
 | `Destroy<TView>()` | 关闭、销毁实例与 ViewModel、释放资源租约并取消注册。 |
-| `TryGet<TView>(out view)` / `IsOpen<TView>()` | 查询实例和打开状态。 |
-| `PopScreen()` | 关闭所有 Window、弹出当前 Screen、恢复前一 Screen。 |
+| `TryGet<TView>(out view)` / `IsOpen<TView>()` | 查询缓存实例和打开生命周期；隐藏在后面的 Screen 仍为打开状态。 |
+| `PopScreen()` | 关闭所有 Window、弹出当前 Screen，调用前一页面的 OnResume 并重新显示。 |
 | `Back()` | 优先关闭栈顶 Window，否则弹出 Screen。 |
+
+导航版本与每个 View 的打开版本使过期异步请求失效；Window 还核对发起请求时的所属 Screen。Stop 会清空导航栈、关闭界面并使等待中的打开请求失效。暂停页面只隐藏，不解绑；Close 才结束打开生命周期。新打开的界面移到所属子层最后一个 sibling。
 
 UI 基类与扩展点：
 
@@ -300,20 +301,24 @@ flowchart LR
     Mono["IMonoModule.OnUpdate"] --> EntityModule["EntityModule"]
     EntityModule -->|Tick(dt)| Entity["Entity"]
     Entity -->|按 Phase 排序| Logic["Logic.OnUpdate(dt)"]
-    Entity --> Comp["IComp<br/>纯 C# 或 MonoBehaviour 数据/能力"]
+    Entity -->|子类直接持有| Comp["IComp<br/>数据与 Unity 引用"]
+    Comp -.构造注入.-> Logic
 ```
 
 | 类型 | API / 扩展方式 |
 | --- | --- |
-| `IEntityModule` | `AddEntity<T>(entity)`；`RemoveEntity(entity)` 会调用实体 `Dispose()`。 |
-| `Entity` | 子类构造时调用受保护的 `AddComp / AddLogic / GetComp / GetLogic`。 |
-| `Logic` | 实现 `OnTick(dt)`；可覆写 `Phase / OnStart / OnStop / Dispose`。 |
+| `IEntityModule.AddEntity<T>(entity)` | 成功接收所有权并返回实体；空、重复、待移除或已释放实体返回 `null`。更新中添加的实体从下一帧更新。 |
+| `IEntityModule.RemoveEntity(entity, onRemoved)` | 返回是否接收移除；立即阻止实体后续行为，更新批次结束后释放，再执行可选回调；更新外立即释放。 |
+| `Entity` | 子类直接保存 Component 引用；首次启动前调用受保护的 `AddLogic`，拒绝重复运行时类型，同阶段保持注册顺序。公开 `IsDisposed` 表示永久释放。 |
+| `Logic` | 基类控制不可覆写的 `OnUpdate / Stop / Dispose`；子类覆写受保护的 `OnStart / OnTick / OnStop / OnDispose`，可覆写 Phase。 |
 | `Logic.Block / UnBlock` | 使用计数式阻塞；阻塞期间停止 Tick，解除全部阻塞后重新 `OnStart`。 |
 | `IComp` | 仅约定 `Entity` 引用；使用 `Comp` 或 `CompMono` 作为基类。 |
 
 `ELogicPhase` 执行顺序：`Input(100) → Command(200) → Navigation(300) → Movement(400) → Targeting(500) → Combat(600) → StatusEffect(700) → Cleanup(800) → Presentation(900)`。
 
-当前正式流程暂未接入具体 `Entity / Logic`，新增玩法对象时按上述 API 组合即可。
+排序发生在每个 Entity 内，EntityModule 逐个更新实体。`EntityModule.Stop` 停止所有行为，Start 允许恢复；Dispose 永久释放。Logic 的 Dispose 先停止再调用 OnDispose，重复释放无效。Entity 不再提供 AddComp、GetComp、GetLogic；当前业务示例为 [`UnitEntity`](../Scripts/GameLogic/Units/Entities/UnitEntity.cs)。
+
+需要归还宿主 GameObject 或释放其资源时，使用 RemoveEntity 的完成回调；不要在接收移除请求后立即回收仍在执行栈中的对象。
 
 ### 4.10 GameSystem：业务系统生命周期
 
@@ -321,8 +326,9 @@ flowchart LR
 
 | API | 用途 / 约束 |
 | --- | --- |
-| `AddSystem<T>(T system)` | 按泛型类型注册；重复类型不覆盖。模块已初始化或启动时，会立即补调对应生命周期。 |
+| `AddSystem<T>(T system)` | 成功返回 `true` 并接收所有权；空、重复类型、重复实例或模块已释放返回 `false`。按模块当前状态补调 Init/Start。 |
 | `GetSystem<T>()` | 获取已注册的业务系统；不存在时返回 `null`。 |
+| `RemoveSystem<T>()` | 按注册类型移除，先 Stop 再 Dispose；未注册返回 `false`。 |
 | `IGameSystem` | 实现 `Init / Start / Stop / Dispose`。 |
 
 系统按添加顺序初始化、启动，按逆序停止、释放。跨多个模块组织一项长期运行的业务功能时使用它；简单的一次性流程无需额外创建 System。
@@ -340,11 +346,9 @@ flowchart LR
 | `Stop()` | 退出当前状态并清空当前引用。 |
 | `Clear()` | `Stop` 后移除全部状态。 |
 
-### 4.12 Log / Save / Config
+### 4.12 Log
 
 - [`ILogModule`](../Scripts/BorFramework/2_Module/LogModule/ILogModule.cs)：`Log`、`Waring`、`Error`，当前直接转发到 `UnityEngine.Debug`。
-- [`ISaveModule`](../Scripts/BorFramework/2_Module/SaveModule/ISaveModule.cs)：当前仅实现空生命周期，尚无存档 API。
-- [`IConfigModule`](../Scripts/BorFramework/2_Module/ConfigModule/IConfigModule.cs)：当前仅实现空生命周期，尚无配置 API。
 
 ## 5. 当前业务端到端调用链
 
@@ -358,7 +362,11 @@ flowchart TD
     MainMenuUI -->|EnterDemo| GameFlow
     GameFlow --> DemoState["DemoState"]
     DemoState -->|LoadSceneAsync| DemoScene["Demo Scene"]
+    DemoState -->|SpawnAsync| Player["玩家 UnitEntity"]
+    DemoState -->|场景或生成失败| MainMenuState
 ```
+
+MainMenuState 的进入版本用于忽略退出后的旧结果；状态退出时销毁菜单注册，GameFlow Stop/Start 后可以重新创建菜单。EnterDemo 仅在菜单场景与 View 均就绪时接收请求，返回值不代表 Demo 已加载完成。Demo 加载或玩家生成失败会记录错误并返回菜单。
 
 查完整业务样板时按以下顺序阅读：
 
@@ -387,10 +395,9 @@ flowchart TD
 - `ResourceModule.Init()` 异步启动 YooAsset，异步加载会等待状态离开 `Initializing`，同步加载不会等待。
 - 任何 `IAssetLease<T>` 都代表资源引用所有权，持有者负责 `Dispose()`。
 - `SceneModule` 同时只处理一个加载或卸载操作；先检查返回的 `bool`，必要时读取 `IsBusy`。
-- `OpenAsync` 不自动进入 UI 导航栈；页面导航使用 `PushScreenAsync`，窗口导航使用 `OpenWindowAsync`。
+- `OpenAsync` 对 Screen/Window 也遵循导航约束；同类型在栈内时拒绝重复入栈，异步请求可能因后续导航失效。
 - `OpenWindowAsync` 要求 Screen 栈中已有页面；纯显示型浮层可按注册层级使用 `OpenAsync`。
 - Event、Mono 的监听都应成对取消；UI 可通过 `UIView.Bind` 自动管理 `BindableProperty` 的解绑。
-- `SaveModule` 与 `ConfigModule` 目前是占位实现，不要假设已有序列化、持久化或配置加载能力。
 - `Assets/Resources/Input/DefultInputSystem.cs` 是 Input System 生成代码，不要手动修改。
 
 ## 8. 文档维护规则
@@ -401,4 +408,4 @@ flowchart TD
 - 修改 `GameBoot` 的模块注册顺序或依赖关系。
 - 修改 UI 层级、导航栈语义或 View / ViewModel 生命周期。
 - 修改资源租约、场景句柄的所有权与释放规则。
-- 将 `SaveModule`、`ConfigModule` 等占位模块实现为可用功能。
+- 修改 Entity/Logic 的装配、更新、移除与释放契约。

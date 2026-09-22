@@ -118,12 +118,15 @@ Module 是跨业务的全局服务。每个 Module：
 
 GameSystem 管理一项业务功能的生命周期，例如战斗流程或关卡规则。它适合纯 C# 编排，不用于替代所有普通类。
 System 必须能从 `IGameSystemModule` 移除，并在移除时完整执行 `Stop` 与 `Dispose`。
+`AddSystem` 返回 `true` 后才转移所有权；注册失败时由调用方处理候选对象。场景级 System 应在退出时调用 `RemoveSystem<T>`，不能只丢弃引用。
 
 ### Entity / Logic / Component
 
-- `Entity` 负责组合能力与所有权，不承担所有业务细节。
-- `Logic` 实现可更新行为；`OnStart`、`OnStop`、`Dispose` 必须闭环。
-- `Component` 保存数据或 Unity 引用，不在无需求时演变为通用 ECS。
+- `Entity` 负责组合能力与所有权，不承担所有业务细节；子类直接保存 Component 并注入 Logic，不重建按类型查询的容器。`AddLogic` 仅用于首次启动前装配。
+- `Logic` 实现可更新行为。公开 `OnUpdate / Stop / Dispose` 由基类控制；子类覆写受保护的 `OnStart / OnTick / OnStop / OnDispose`，临时运行关系在 OnStop 解除，永久资源在 OnDispose 释放。
+- `Component` 保存数据、Unity 引用及维护局部状态不变量的方法；帧调度、跨组件伤害结算和事件发布放在 Logic，不在无需求时演变为通用 ECS。
+- `IEntityModule.AddEntity` 成功后接收实体所有权。更新中请求移除会延迟释放，依赖实体结束的 GameObject 回收和租约释放必须放在 `RemoveEntity(entity, onRemoved)` 完成回调中。
+- 同一 Entity 的 Logic 按 Phase 排序，同 Phase 保留装配顺序；不要假设所有 Entity 已完成同一阶段才进入下一阶段。
 - 只有需要统一帧调度和生命周期的场景对象才进入 Entity；简单场景表现可以保留为 MonoBehaviour。
 
 ### MonoBehaviour
@@ -137,6 +140,7 @@ System 必须能从 `IGameSystemModule` 移除，并在移除时完整执行 `St
 - 异步方法使用 `Async` 后缀；除 Unity 入口桥接外返回 `UniTask` 或 `UniTask<T>`，避免 `async void`。
 - `.Forget()` 只用于明确的顶层入口，内部流程应继续返回任务和成功状态。
 - `await` 后重新检查宿主是否仍有效、请求是否仍是最新版本、导航或场景上下文是否仍成立。
+- UI 的 Screen/Window 必须通过模块导航规则打开；同类型在栈中时拒绝重复压栈，调用方需要处理异步返回 `null`。被后续页面隐藏的 Screen 仍属于打开生命周期，`IsOpen` 不等于当前可见。
 - 同一个 `UniTask` 不重复 await；需要共享结果时使用框架允许的保留方式或等待显式状态。
 - 资源通过 address 与 `IResourceModule` 加载，不在业务层直接绑定 YooAsset 实现。
 - 场景切换以 `ISceneModule` 的返回结果为准；不要把“请求发出”当成“场景可用”。

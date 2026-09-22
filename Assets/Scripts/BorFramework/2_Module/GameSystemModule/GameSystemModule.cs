@@ -9,14 +9,15 @@ namespace BorFramework
         private readonly List<IGameSystem> _systemOrder = new();
         private bool _initialized;
         private bool _started;
+        private bool _disposed;
 
-        public void AddSystem<T>(T system) where T : class, IGameSystem
+        public bool AddSystem<T>(T system) where T : class, IGameSystem
         {
-            if (system == null)
-                return;
+            if (_disposed || system == null || _systemOrder.Contains(system))
+                return false;
 
             if (!_systems.TryAdd(typeof(T), system))
-                return;
+                return false;
 
             _systemOrder.Add(system);
 
@@ -25,6 +26,8 @@ namespace BorFramework
 
             if (_started)
                 system.Start();
+
+            return true;
         }
 
         public T GetSystem<T>() where T : class, IGameSystem
@@ -33,9 +36,20 @@ namespace BorFramework
             return system as T;
         }
 
+        public bool RemoveSystem<T>() where T : class, IGameSystem
+        {
+            if (!_systems.Remove(typeof(T), out IGameSystem system))
+                return false;
+
+            _systemOrder.Remove(system);
+            system.Stop();
+            system.Dispose();
+            return true;
+        }
+
         public void Init()
         {
-            if (_initialized)
+            if (_initialized || _disposed)
                 return;
 
             foreach (var system in _systemOrder)
@@ -46,7 +60,7 @@ namespace BorFramework
 
         public void Start()
         {
-            if (_started)
+            if (!_initialized || _started || _disposed)
                 return;
 
             foreach (var system in _systemOrder)
@@ -60,14 +74,17 @@ namespace BorFramework
             if (!_started)
                 return;
 
+            _started = false;
             for (int i = _systemOrder.Count - 1; i >= 0; i--)
                 _systemOrder[i].Stop();
-
-            _started = false;
         }
 
         public void Dispose()
         {
+            if (_disposed)
+                return;
+
+            _disposed = true;
             Stop();
 
             for (int i = _systemOrder.Count - 1; i >= 0; i--)

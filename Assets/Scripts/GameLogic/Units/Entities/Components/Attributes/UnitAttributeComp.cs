@@ -96,11 +96,6 @@ namespace GameLogic.Units.Common
             return true;
         }
 
-        public bool HasAttribute(EUnitAttributeType type)
-        {
-            return _attributes.ContainsKey(type);
-        }
-
         public bool TryGetBaseValue(EUnitAttributeType type, out float value)
         {
             value = 0f;
@@ -121,43 +116,6 @@ namespace GameLogic.Units.Common
             return true;
         }
 
-        public bool TrySetBaseValue(EUnitAttributeType type, float value)
-        {
-            if (!IsFiniteNonNegative(value)
-                || !_attributes.TryGetValue(type, out UnitAttributeValue attribute))
-            {
-                return false;
-            }
-
-            float clampedValue = ClampValue(attribute, value, false);
-            attribute.SetBaseAndCurrentValue(clampedValue);
-            ClampResourcesUsing(type, true);
-            return true;
-        }
-
-        public bool TrySetCurrentValue(EUnitAttributeType type, float value)
-        {
-            if (!IsFiniteNonNegative(value)
-                || !_attributes.TryGetValue(type, out UnitAttributeValue attribute))
-            {
-                return false;
-            }
-
-            attribute.SetCurrentValue(ClampValue(attribute, value, true));
-            ClampResourcesUsing(type, false);
-            return true;
-        }
-
-        public bool TryResetCurrentValue(EUnitAttributeType type)
-        {
-            if (!_attributes.TryGetValue(type, out UnitAttributeValue attribute))
-                return false;
-
-            attribute.SetCurrentValue(ClampValue(attribute, attribute.BaseValue, true));
-            ClampResourcesUsing(type, false);
-            return true;
-        }
-
         public bool TryChangeResource(
             EUnitAttributeType type,
             float delta,
@@ -174,8 +132,7 @@ namespace GameLogic.Units.Common
 
             float nextValue = ClampValue(
                 attribute,
-                attribute.CurrentValue + delta,
-                true);
+                attribute.CurrentValue + delta);
             actualDelta = nextValue - attribute.CurrentValue;
             attribute.SetCurrentValue(nextValue);
             return true;
@@ -187,9 +144,18 @@ namespace GameLogic.Units.Common
         {
             errorMessage = string.Empty;
 
-            if (!HasKind(attributes, EUnitAttributeType.MaxHealth, EUnitAttributeKind.Stat))
+            if (!attributes.TryGetValue(
+                    EUnitAttributeType.MaxHealth,
+                    out UnitAttributeValue maxHealth)
+                || maxHealth.Kind != EUnitAttributeKind.Stat)
             {
                 errorMessage = "单位必须配置 Stat：MaxHealth。";
+                return false;
+            }
+
+            if (maxHealth.CurrentValue <= 0f)
+            {
+                errorMessage = "单位初始 MaxHealth 必须大于 0。";
                 return false;
             }
 
@@ -207,6 +173,12 @@ namespace GameLogic.Units.Common
                 || health.MaximumAttributeType != EUnitAttributeType.MaxHealth)
             {
                 errorMessage = "单位必须配置上限为 MaxHealth 的 Resource：Health。";
+                return false;
+            }
+
+            if (health.CurrentValue <= 0f)
+            {
+                errorMessage = "单位初始 Health 必须大于 0。";
                 return false;
             }
 
@@ -252,8 +224,7 @@ namespace GameLogic.Units.Common
 
         private float ClampValue(
             UnitAttributeValue attribute,
-            float value,
-            bool useCurrentMaximum)
+            float value)
         {
             if (!attribute.HasMaximum
                 || !_attributes.TryGetValue(
@@ -263,35 +234,7 @@ namespace GameLogic.Units.Common
                 return Mathf.Max(0f, value);
             }
 
-            float maximumValue = useCurrentMaximum
-                ? maximum.CurrentValue
-                : maximum.BaseValue;
-            return Mathf.Clamp(value, 0f, maximumValue);
-        }
-
-        private void ClampResourcesUsing(
-            EUnitAttributeType maximumAttributeType,
-            bool clampBaseValue)
-        {
-            foreach (UnitAttributeValue attribute in _attributes.Values)
-            {
-                if (!attribute.HasMaximum
-                    || attribute.MaximumAttributeType != maximumAttributeType)
-                {
-                    continue;
-                }
-
-                float currentValue = ClampValue(attribute, attribute.CurrentValue, true);
-                if (!clampBaseValue)
-                {
-                    attribute.SetCurrentValue(currentValue);
-                    continue;
-                }
-
-                float baseValue = ClampValue(attribute, attribute.BaseValue, false);
-                attribute.SetBaseValue(baseValue);
-                attribute.SetCurrentValue(currentValue);
-            }
+            return Mathf.Clamp(value, 0f, maximum.CurrentValue);
         }
     }
 }

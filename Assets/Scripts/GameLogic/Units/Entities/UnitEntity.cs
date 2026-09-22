@@ -20,7 +20,7 @@ namespace GameLogic.Units
 
         internal UnitTeamComp Team { get; }
 
-        internal GameEffectComp Effects { get; }
+        internal UnitGameEffectLogic Effects { get; }
 
         internal UnitDamageFlashLogic DamageFlash { get; }
 
@@ -70,8 +70,8 @@ namespace GameLogic.Units
             var skills = new UnitSkillComp();
             skills.Entity = this;
 
-            Effects = new GameEffectComp(Attributes, Life, eventModule);
-            Effects.Entity = this;
+            var effects = new GameEffectComp();
+            effects.Entity = this;
 
             var skillRuntimeContext = new SkillRuntimeContext(
                 this,
@@ -83,13 +83,7 @@ namespace GameLogic.Units
             for (int i = 0; i < definition.Skills.Count; i++)
             {
                 SkillConfig config = definition.Skills[i];
-                if (config == null)
-                    continue;
-
-                if (!skills.TryRegister(
-                        config.Slot,
-                        config.CreateSkill(skillRuntimeContext)))
-                    Debug.LogWarning($"单位技能槽重复，已忽略：{config.Slot}", gameObject);
+                skills.TryRegister(config.Slot, config.CreateSkill(skillRuntimeContext));
             }
 
             UnitAIComp ai = null;
@@ -128,7 +122,6 @@ namespace GameLogic.Units
             {
                 inputLogic = new UnitInputLogic(
                     inputModule,
-                    view,
                     command,
                     skills,
                     Life,
@@ -166,7 +159,7 @@ namespace GameLogic.Units
                 Life,
                 physics);
             var skillLogic = new SkillLogic(skills, Life);
-            var gameEffectLogic = new UnitGameEffectLogic(Effects);
+            Effects = new UnitGameEffectLogic(this, effects, Attributes, Life, eventModule);
             DamageFlash = new UnitDamageFlashLogic(view);
             var animationLogic = new UnitAnimationLogic(
                 view,
@@ -174,23 +167,6 @@ namespace GameLogic.Units
                 skills,
                 definition.IdleAnimationStateName,
                 definition.MoveAnimationStateName);
-
-            AddComp(command);
-            AddComp(view);
-            AddComp(Attributes);
-            AddComp(Life);
-            AddComp(Team);
-            AddComp(skills);
-            AddComp(Effects);
-
-            if (ai != null)
-                AddComp(ai);
-
-            if (navigation != null)
-                AddComp(navigation);
-
-            if (physics != null)
-                AddComp(physics);
 
             if (inputLogic != null)
                 AddLogic(inputLogic);
@@ -203,7 +179,7 @@ namespace GameLogic.Units
 
             AddLogic(movementLogic);
             AddLogic(skillLogic);
-            AddLogic(gameEffectLogic);
+            AddLogic(Effects);
             AddLogic(DamageFlash);
             AddLogic(animationLogic);
         }

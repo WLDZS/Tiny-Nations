@@ -4,43 +4,61 @@ namespace BorFramework
     {
         private int _blockCount;
         private bool _isRunning;
+        private bool _disposed;
 
         public virtual ELogicPhase Phase => ELogicPhase.Command;
 
         public bool IsBlocked => _blockCount > 0;
 
-        public virtual void OnStart() { }
-
+        /// <summary>首次更新时启动；阻塞或释放后不执行当前帧行为。</summary>
         public void OnUpdate(float dt)
         {
+            if (_disposed)
+                return;
+
             if (IsBlocked)
             {
-                if (_isRunning)
-                {
-                    OnStop();
-                    _isRunning = false;
-                }
-
+                Stop();
                 return;
             }
 
             if (!_isRunning)
             {
-                OnStart();
                 _isRunning = true;
+                OnStart();
             }
 
-            OnTick(dt);
+            if (_isRunning && !_disposed && !IsBlocked)
+                OnTick(dt);
         }
 
-        protected abstract void OnTick(float dt);
+        /// <summary>停止已启动的行为；之后允许通过更新重新启动。</summary>
+        public void Stop()
+        {
+            if (!_isRunning)
+                return;
 
-        public virtual void OnStop() { }
+            _isRunning = false;
+            OnStop();
+        }
 
-        public virtual void Dispose() { }
+        /// <summary>先停止行为，再永久释放其持有状态；重复调用无效。</summary>
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+
+            _disposed = true;
+            Stop();
+            OnDispose();
+            _blockCount = 0;
+        }
 
         public void Block()
         {
+            if (_disposed)
+                return;
+
             _blockCount++;
         }
 
@@ -49,5 +67,13 @@ namespace BorFramework
             if (_blockCount > 0)
                 _blockCount--;
         }
+
+        protected virtual void OnStart() { }
+
+        protected abstract void OnTick(float dt);
+
+        protected virtual void OnStop() { }
+
+        protected virtual void OnDispose() { }
     }
 }

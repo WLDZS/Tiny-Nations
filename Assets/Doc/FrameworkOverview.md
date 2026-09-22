@@ -2,6 +2,8 @@
 
 本文面向参与《小小国家》（Tiny Nations）开发的技术同事，介绍当前框架的组织方式、运行流程和业务接入约定。首次接触项目时建议先阅读本文，需要定位具体方法时使用 [框架导航与 API 索引](FrameworkNavigation.md)。新增代码同时遵守 [C# 与框架开发规范](CodingStandards.md) 和 [Unity 目录规范](DirectoryStandards.md)。
 
+本文按当前源码整理；本次整理未运行编译或 Play Mode，运行与视觉结果仍需人工验收。
+
 ## 1. 框架定位
 
 BorFramework 是本项目基于 Unity 构建的轻量游戏框架，负责统一启动、模块访问、帧更新、资源加载、场景切换、UI 和业务对象生命周期。
@@ -46,8 +48,7 @@ GameBoot
   └─ GameHub：注册、获取、初始化、启停模块
        ├─ 基础服务：Log / Mono / Event / Input
        ├─ 内容服务：Resource / PrefabPool / Scene / UI
-       ├─ 业务托管：GameSystem / Entity
-       └─ 预留模块：Save / Config
+       └─ 业务托管：GameSystem / Entity
 
 GameLogic
   ├─ IGameSystem：组织一项业务功能
@@ -64,7 +65,7 @@ GameLogic
 
 1. 初始化 `GameHub`。
 2. 创建模块并按接口类型注册。
-3. 创建 `GameFlowSystem`，通过构造函数注入模块并加入 `GameSystemModule`。
+3. 按依赖顺序创建 NavigationSystem、UnitSystem、GameFlowSystem，注入依赖并加入 `GameSystemModule`。
 4. 按注册顺序调用各模块的 `Init()` 和 `Start()`，其中业务 System 随 `GameSystemModule` 一起启动。
 5. 在自身 `Start()` 中发布 `FrameworkReadyEvent`。
 6. 将 Unity 的三类帧回调转发到 `IMonoModule`。
@@ -74,7 +75,7 @@ GameLogic
 
 ```text
 Log → Mono → Event → Input → Entity → Resource → PrefabPool
-    → Save → Config → Scene → UI → GameSystem
+    → Scene → UI → GameSystem
 ```
 
 主要依赖通过构造函数显式传入：`EntityModule` 依赖 `IMonoModule`，`PrefabPoolModule`、`SceneModule` 和
@@ -124,9 +125,7 @@ var uiModule = GameHub.Ins.GetModule<IUIModule>();
 | `IPrefabPoolModule` | 按资源地址复用 Prefab 实例 | `RentAsync`、`Return` |
 | `ISceneModule` | 按资源地址管理场景 | `LoadSceneAsync`、`UnloadSceneAsync`、`SetActiveScene` |
 | `IUIModule` | UI 注册、实例缓存、绑定与导航 | `Register`、`OpenAsync`、`PushScreenAsync`、`Back` |
-| `IGameSystemModule` | 托管业务系统生命周期 | `AddSystem`、`GetSystem` |
-| `ISaveModule` | 存档模块预留接口 | 当前仅有生命周期 |
-| `IConfigModule` | 配置模块预留接口 | 当前仅有生命周期 |
+| `IGameSystemModule` | 托管业务系统生命周期 | `AddSystem`、`GetSystem`、`RemoveSystem` |
 
 表中名称与当前源码一致，包括 `Waring` 和 `OnFixUpdate`。完整接口链接和方法说明见 [API 索引](FrameworkNavigation.md)。
 
@@ -139,17 +138,21 @@ var uiModule = GameHub.Ins.GetModule<IUIModule>();
 [`GameFlowSystem`](../Scripts/GameLogic/GameFlow/GameFlowSystem.cs) 展示了这种用法：持有场景、UI 和帧模块，驱动业务状态机，并在停止与释放时解除帧回调。
 
 ```csharp
-systemModule.AddSystem(new MyGameSystem(/* 构造参数 */));
+var candidate = new MyGameSystem(/* 构造参数 */);
+if (!systemModule.AddSystem(candidate))
+{
+    candidate.Dispose();
+    return;
+}
+
 var system = systemModule.GetSystem<MyGameSystem>();
+// 业务结束时停止、释放并移除：
+systemModule.RemoveSystem<MyGameSystem>();
 ```
 
-这是接入形式示意，`MyGameSystem` 由业务实现。系统按注册的泛型类型唯一；模块已经启动后添加系统，会立即调用该系统的 `Init()` 和 `Start()`。当前 System 随模块统一释放，没有单独移除接口。
+这是接入形式示意，`MyGameSystem` 由业务实现。系统按注册的泛型类型唯一，重复类型和重复实例都会被拒绝。`AddSystem` 成功返回 `true` 并接收所有权，失败返回 `false`，候选系统仍由调用方负责；已初始化或启动时，会补调对应生命周期。`RemoveSystem<T>` 成功时先停止再释放，未注册时返回 `false`。
 
-需要随游戏全程启动的系统由应用层 `GameBoot` 在 `InitModules()` 前创建并加入 `GameSystemModule`：
-
-```csharp
-gameSystemModule.AddSystem(new MyGameSystem(monoModule));
-```
+需要随游戏全程启动的系统由应用层 `GameBoot` 在 `InitModules()` 前创建并加入 `GameSystemModule`。
 
 场景内临时创建的系统仍可直接使用 `AddSystem`，但必须同时规划退出场景时的移除和释放。
 
@@ -159,16 +162,20 @@ gameSystemModule.AddSystem(new MyGameSystem(monoModule));
 
 | 类型 | 职责 | 业务实现方式 |
 | --- | --- | --- |
-| `Entity` | 聚合对象的数据与行为 | 继承后用 `AddComp`、`AddLogic` 组装 |
+| `Entity` | 聚合对象的数据与行为 | 子类直接持有 Component，首次启动前用 `AddLogic` 注册行为 |
 | `Comp` | 纯 C# Component 基类 | 保存对象数据或提供能力 |
 | `CompMono` | MonoBehaviour Component 基类 | 用于需要 Unity 组件载体的能力 |
 | `Logic` | 可按帧执行的行为 | 实现 `OnTick(float dt)` |
 
-Entity 通过 `IEntityModule.AddEntity()` 加入更新；`RemoveEntity()` 会调用它的 `Dispose()`。组件与逻辑的添加、获取方法是受保护成员，供 Entity 子类使用。
+Entity 通过 `IEntityModule.AddEntity()` 转移所有权并加入更新；空、重复、待移除或已释放实体返回 `null`。Entity 不保存 Component 查询容器，子类直接传递所需引用；`AddComp`、`GetComp`、`GetLogic` 已移除。
+
+更新中新增实体从下一帧开始执行。`RemoveEntity(entity, onRemoved)` 返回是否接收移除请求：立即标记实体停止后续行为，本批更新结束后再释放；更新外则立即释放。成功释放后调用 `onRemoved`，宿主 GameObject 归还池与资源租约释放应放在该回调，避免实体仍在 Tick 时先回收其表现对象。`EntityModule.Stop()` 会停止全部实体，之后 Start 可恢复；Dispose 则永久释放。
 
 ### 6.3 Logic：行为执行与阻塞
 
-[`Logic`](../Scripts/BorFramework/1_Core/ELC/Logic/Logic.cs) 首次执行时调用 `OnStart()`，随后调用 `OnTick(dt)`。`Block()` 和 `UnBlock()` 使用计数式阻塞：全部阻塞解除后，逻辑恢复执行。
+[`Logic`](../Scripts/BorFramework/1_Core/ELC/Logic/Logic.cs) 使用不可覆写的 `OnUpdate / Stop / Dispose` 统一生命周期。子类实现受保护的 `OnStart / OnTick / OnStop / OnDispose`：首次更新启动；Stop 只停止已运行行为；Dispose 先 Stop 再 OnDispose，重复调用无效，释放后不能恢复。不要在子类重新实现公开 Dispose 绕过停止顺序。
+
+`Block()` 和 `UnBlock()` 使用计数式阻塞。阻塞后的下一次更新停止行为，解除全部阻塞后下一次更新重新启动。`AddLogic` 只允许首次启动前装配，同类型拒绝重复注册；同一 Phase 保留装配顺序。
 
 `Phase` 用于单个 Entity 内的执行排序：
 
@@ -275,15 +282,17 @@ await uiModule.PushScreenAsync<MainMenuView>();
 
 | 操作 | 当前语义 |
 | --- | --- |
-| `OpenAsync<T>()` | 打开注册 UI，不进入导航栈 |
-| `PushScreenAsync<T>()` | 打开 Screen 并压栈，对前一 Screen 调用 `OnPause()` |
-| `OpenWindowAsync<T>()` | 打开 Window 并压栈，要求 Screen 栈非空 |
+| `OpenAsync<T>()` | Screen、Window 分别转入对应导航 API；其他层直接打开 |
+| `PushScreenAsync<T>()` | 加载成功后关闭窗口、暂停并隐藏前一 Screen，再压入新页面；同类型已在栈中则返回 `null` |
+| `OpenWindowAsync<T>()` | 在当前 Screen 上打开 Window 并压栈；无页面或同类型窗口已在栈中则返回 `null` |
 | `Back()` | 优先关闭栈顶 Window，否则弹出 Screen |
-| `PopScreen()` | 关闭当前窗口、弹出 Screen，对前一 Screen 调用 `OnResume()` |
+| `PopScreen()` | 关闭当前窗口、弹出 Screen，对前一 Screen 调用 `OnResume()` 并重新显示 |
 | `Close<T>()` | 关闭并解绑，保留实例、ViewModel 和资源租约 |
 | `Destroy<T>()` | 销毁实例、释放 ViewModel 和租约，并移除注册 |
 
-`OnPause()` 当前是 ViewModel 通知，页面需要按自身需求处理暂停表现。世界血条、名字等可重复创建的元素可继承 `WorldUIElementBase`，通过 `Bind(target, offset)` 记录目标，不参与页面导航栈。
+导航请求记录导航版本，每种 View 还记录打开请求版本；Window 同时记录所属 Screen。等待期间发生后续导航、关闭或停止时，过期请求返回 `null`，不再显示旧页面。隐藏的下层 Screen 保留绑定和打开生命周期，因此 `IsOpen<T>()` 仍为 `true`，不能用它代替可见性判断。新打开的 View 会置于所属子层最后一个 sibling。
+
+世界血条、名字等可重复创建的元素可继承 `WorldUIElementBase`，通过 `Bind(target, offset)` 记录目标，不参与页面导航栈。
 
 ## 9. 事件、输入和帧更新
 
@@ -312,7 +321,10 @@ GameBoot 初始化模块并安装 GameFlowSystem
   → MainMenuViewModel 接收进入 Demo 的回调
   → 点击按钮后切换到 DemoState
   → DemoState 加载 Demo 场景
+  → UnitSystem 生成玩家单位
 ```
+
+MainMenuState 使用进入版本使旧异步结果失效，场景已加载时可直接重新注册、打开菜单；退出时销毁菜单注册，保证 GameFlowSystem Stop 后再次 Start 能重新进入。只有菜单场景与 View 均已就绪时才接受 EnterDemo。Demo 场景加载或玩家生成失败会记录错误并返回主菜单。这里描述控制流，尚未用本次运行结果验收。
 
 建议按以下顺序阅读源码：
 

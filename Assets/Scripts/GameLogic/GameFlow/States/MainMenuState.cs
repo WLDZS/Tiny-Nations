@@ -16,6 +16,9 @@ namespace GameLogic.GameFlow.States
         private readonly Func<bool> _enterDemo;
         private int _entryVersion;
 
+        /// <summary>场景和菜单均已准备好，可以接受进入关卡的请求。</summary>
+        public bool IsReady { get; private set; }
+
         public MainMenuState(ISceneModule sceneModule, IUIModule uiModule, Func<bool> enterDemo)
         {
             _sceneModule = sceneModule;
@@ -26,12 +29,14 @@ namespace GameLogic.GameFlow.States
         public override void OnEnter()
         {
             _entryVersion++;
+            IsReady = false;
             EnterAsync(_entryVersion).Forget();
         }
 
         public override void OnExit()
         {
             _entryVersion++;
+            IsReady = false;
             _uiModule?.Destroy<MainMenuView>();
         }
 
@@ -43,7 +48,15 @@ namespace GameLogic.GameFlow.States
                 return;
             }
 
-            if (!await _sceneModule.LoadSceneAsync(MainMenuSceneAddress))
+            // 上一次进入可能仍在结束场景操作，等待它结束再判断当前场景。
+            while (_sceneModule.IsBusy && IsCurrent(entryVersion))
+                await UniTask.Yield();
+
+            if (!IsCurrent(entryVersion))
+                return;
+
+            if (!_sceneModule.TryGetScene(MainMenuSceneAddress, out _)
+                && !await _sceneModule.LoadSceneAsync(MainMenuSceneAddress))
             {
                 if (IsCurrent(entryVersion))
                     Debug.LogError($"MainMenu状态加载场景失败：{MainMenuSceneAddress}");
@@ -60,8 +73,16 @@ namespace GameLogic.GameFlow.States
                 () => new MainMenuViewModel(_enterDemo));
 
             MainMenuView view = await _uiModule.PushScreenAsync<MainMenuView>();
-            if (IsCurrent(entryVersion) && view == null)
+            if (!IsCurrent(entryVersion))
+                return;
+
+            if (view == null)
+            {
                 Debug.LogError($"MainMenu状态加载界面失败：{MainMenuViewAddress}");
+                return;
+            }
+
+            IsReady = true;
         }
 
         private bool IsCurrent(int entryVersion)

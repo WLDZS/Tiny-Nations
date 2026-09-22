@@ -30,6 +30,33 @@ namespace GameLogic.Units.Skills
 
         public string AnimationStateName => _animationStateName;
 
+        internal override bool TryValidate(out string errorMessage)
+        {
+            if (!base.TryValidate(out errorMessage))
+                return false;
+
+            if (string.IsNullOrWhiteSpace(_animationStateName))
+            {
+                errorMessage = "防御技能缺少动画状态名。";
+                return false;
+            }
+
+            if (!IsFiniteNonNegative(_cooldownSeconds)
+                || !IsFiniteNonNegative(_minimumDurationSeconds))
+            {
+                errorMessage = "防御冷却时间和最短持续时间必须是非负有限数值。";
+                return false;
+            }
+
+            if (!IsFiniteNonNegative(_damageReductionRatio) || _damageReductionRatio > 1f)
+            {
+                errorMessage = "防御减伤比例必须在 0 到 1 之间。";
+                return false;
+            }
+
+            return true;
+        }
+
         internal override ISkill CreateSkill(in SkillRuntimeContext context)
         {
             return new GuardSkill(this);

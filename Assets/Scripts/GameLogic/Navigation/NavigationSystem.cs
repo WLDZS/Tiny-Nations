@@ -8,8 +8,7 @@ namespace GameLogic.Navigation
 {
     public sealed class NavigationSystem : INavigationSystem
     {
-        private const string GroundPath = "World/Grid/Ground";
-        private const string CollisionPath = "World/Grid/Collision";
+        private const string GridPath = "World/Grid";
 
         private readonly GridPathfinder _pathfinder = new();
         private readonly List<Vector3Int> _cellPath = new();
@@ -32,7 +31,7 @@ namespace GameLogic.Navigation
 
             Scene activeScene = SceneManager.GetActiveScene();
             ClearMap();
-            TryBindScene(activeScene, true);
+            TryBindScene(activeScene);
         }
 
         public void Stop()
@@ -68,70 +67,68 @@ namespace GameLogic.Navigation
             clearanceRadius = Mathf.Max(0f, clearanceRadius);
             Vector2 startAnchorPosition = startWorldPosition + navigationAnchorOffset;
             Vector2 destinationAnchorPosition = destinationWorldPosition + navigationAnchorOffset;
-            Vector3Int startCell = _map.WorldToCell(startAnchorPosition);
-            Vector3Int destinationCell = _map.WorldToCell(destinationAnchorPosition);
-
-            if (!_map.IsWalkable(startCell, clearanceRadius)
-                || !_map.IsPositionWalkable(startAnchorPosition, clearanceRadius))
-            {
+            if (!_map.TryGetWalkableCell(startAnchorPosition, clearanceRadius, out Vector3Int startCell))
                 return EPathQueryStatus.InvalidStart;
-            }
 
-            if (!_map.IsWalkable(destinationCell, clearanceRadius)
-                || !_map.IsPositionWalkable(destinationAnchorPosition, clearanceRadius))
-            {
+            if (!_map.TryGetWalkableCell(destinationAnchorPosition, clearanceRadius, out Vector3Int destinationCell))
                 return EPathQueryStatus.InvalidDestination;
-            }
 
+            EPathQueryStatus status;
             if (startCell == destinationCell)
             {
-                return BuildSameCellPath(
+                status = BuildSameCellPath(
                     startCell,
-                    startWorldPosition,
-                    destinationWorldPosition,
-                    navigationAnchorOffset,
+                    startAnchorPosition,
+                    destinationAnchorPosition,
                     clearanceRadius,
                     waypoints);
             }
-
-            if (!_pathfinder.TryFindPath(
+            else if (!_pathfinder.TryFindPath(
                     _map,
                     startCell,
                     destinationCell,
                     clearanceRadius,
                     _cellPath))
             {
-                return EPathQueryStatus.NoPath;
+                status = EPathQueryStatus.NoPath;
             }
-
-            if (!TryBuildWaypoints(
-                    destinationWorldPosition,
-                    navigationAnchorOffset,
+            else if (!TryBuildWaypoints(
+                    destinationAnchorPosition,
                     clearanceRadius,
                     waypoints))
             {
-                waypoints.Clear();
-                return EPathQueryStatus.InvalidDestination;
+                status = EPathQueryStatus.InvalidDestination;
             }
-
-            if (!EnsureStartConnection(
+            else if (!EnsureStartConnection(
                     startCell,
-                    startWorldPosition,
-                    navigationAnchorOffset,
+                    startAnchorPosition,
                     clearanceRadius,
                     waypoints))
             {
-                waypoints.Clear();
-                return EPathQueryStatus.InvalidStart;
+                status = EPathQueryStatus.InvalidStart;
+            }
+            else
+            {
+                status = EPathQueryStatus.Success;
             }
 
+            if (status != EPathQueryStatus.Success)
+            {
+                waypoints.Clear();
+                return status;
+            }
+
+            // 内部只处理导航中心，成功后统一还原单位根节点坐标。
+            for (int index = 0; index < waypoints.Count - 1; index++)
+                waypoints[index] -= navigationAnchorOffset;
+
+            waypoints[waypoints.Count - 1] = destinationWorldPosition;
             return EPathQueryStatus.Success;
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            bool reportMissingMap = mode == LoadSceneMode.Single;
-            if (TryBindScene(scene, reportMissingMap))
+            if (TryBindScene(scene))
                 return;
 
             if (mode == LoadSceneMode.Single)
@@ -144,21 +141,25 @@ namespace GameLogic.Navigation
                 ClearMap();
         }
 
-        private bool TryBindScene(Scene scene, bool reportMissingMap)
+        private bool TryBindScene(Scene scene)
         {
             if (!scene.IsValid() || !scene.isLoaded)
                 return false;
 
-            Transform groundTransform = FindSceneTransform(scene, GroundPath);
-            Transform collisionTransform = FindSceneTransform(scene, CollisionPath);
+            Transform gridTransform = FindSceneTransform(scene, GridPath);
+            if (gridTransform == null)
+                return false;
+
+            Transform groundTransform = gridTransform.Find("Ground");
+            Transform collisionTransform = gridTransform.Find("Collision");
+            // 菜单等场景不声明导航地图；只诊断已声明但不完整的地图。
+            if (groundTransform == null && collisionTransform == null)
+                return false;
+
             if (groundTransform == null || collisionTransform == null)
             {
-                if (reportMissingMap)
-                {
-                    Debug.LogError(
-                        $"导航地图绑定失败：场景 {scene.name} 缺少 {GroundPath} 或 {CollisionPath}。");
-                }
-
+                Debug.LogError(
+                    $"导航地图绑定失败：场景 {scene.name} 缺少 {GridPath}/Ground 或 {GridPath}/Collision。");
                 return false;
             }
 
@@ -204,20 +205,17 @@ namespace GameLogic.Navigation
 
         private EPathQueryStatus BuildSameCellPath(
             Vector3Int startCell,
-            Vector2 startWorldPosition,
-            Vector2 destinationWorldPosition,
-            Vector2 navigationAnchorOffset,
+            Vector2 startAnchorPosition,
+            Vector2 destinationAnchorPosition,
             float clearanceRadius,
             List<Vector2> waypoints)
         {
-            Vector2 startAnchorPosition = startWorldPosition + navigationAnchorOffset;
-            Vector2 destinationAnchorPosition = destinationWorldPosition + navigationAnchorOffset;
             if (_map.HasSegmentClearance(
                     startAnchorPosition,
                     destinationAnchorPosition,
                     clearanceRadius))
             {
-                waypoints.Add(destinationWorldPosition);
+                waypoints.Add(destinationAnchorPosition);
                 return EPathQueryStatus.Success;
             }
 
@@ -238,17 +236,15 @@ namespace GameLogic.Navigation
                 return EPathQueryStatus.InvalidDestination;
             }
 
-            Vector2 cellCenterWaypoint = cellCenter - navigationAnchorOffset;
-            if ((cellCenterWaypoint - startWorldPosition).sqrMagnitude > Mathf.Epsilon)
-                waypoints.Add(cellCenterWaypoint);
+            if ((cellCenter - startAnchorPosition).sqrMagnitude > Mathf.Epsilon)
+                waypoints.Add(cellCenter);
 
-            waypoints.Add(destinationWorldPosition);
+            waypoints.Add(destinationAnchorPosition);
             return EPathQueryStatus.Success;
         }
 
         private bool TryBuildWaypoints(
-            Vector2 destinationWorldPosition,
-            Vector2 navigationAnchorOffset,
+            Vector2 destinationAnchorPosition,
             float clearanceRadius,
             ICollection<Vector2> waypoints)
         {
@@ -259,13 +255,11 @@ namespace GameLogic.Navigation
                 if (previousDirection == nextDirection)
                     continue;
 
-                Vector2 worldPosition = _map.GetCellCenterWorld(_cellPath[index]);
-                waypoints.Add(worldPosition - navigationAnchorOffset);
+                waypoints.Add(_map.GetCellCenterWorld(_cellPath[index]));
             }
 
             Vector3Int destinationCell = _cellPath[_cellPath.Count - 1];
             Vector2 destinationCellCenter = _map.GetCellCenterWorld(destinationCell);
-            Vector2 destinationAnchorPosition = destinationWorldPosition + navigationAnchorOffset;
             if ((destinationAnchorPosition - destinationCellCenter).sqrMagnitude > Mathf.Epsilon)
             {
                 if (!_map.HasSegmentClearance(
@@ -276,28 +270,25 @@ namespace GameLogic.Navigation
                     return false;
                 }
 
-                waypoints.Add(destinationCellCenter - navigationAnchorOffset);
+                waypoints.Add(destinationCellCenter);
             }
 
-            waypoints.Add(destinationWorldPosition);
+            waypoints.Add(destinationAnchorPosition);
             return true;
         }
 
         private bool EnsureStartConnection(
             Vector3Int startCell,
-            Vector2 startWorldPosition,
-            Vector2 navigationAnchorOffset,
+            Vector2 startAnchorPosition,
             float clearanceRadius,
             List<Vector2> waypoints)
         {
             if (waypoints.Count == 0)
                 return false;
 
-            Vector2 startAnchorPosition = startWorldPosition + navigationAnchorOffset;
-            Vector2 firstWaypointAnchorPosition = waypoints[0] + navigationAnchorOffset;
             if (_map.HasSegmentClearance(
                     startAnchorPosition,
-                    firstWaypointAnchorPosition,
+                    waypoints[0],
                     clearanceRadius))
             {
                 return true;
@@ -312,9 +303,8 @@ namespace GameLogic.Navigation
                 return false;
             }
 
-            Vector2 startCellWaypoint = startCellCenter - navigationAnchorOffset;
-            if ((startCellWaypoint - waypoints[0]).sqrMagnitude > Mathf.Epsilon)
-                waypoints.Insert(0, startCellWaypoint);
+            if ((startCellCenter - waypoints[0]).sqrMagnitude > Mathf.Epsilon)
+                waypoints.Insert(0, startCellCenter);
 
             return true;
         }

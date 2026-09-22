@@ -9,6 +9,8 @@ namespace GameLogic.Units.Skills
 
         public ISkill ActiveSkill { get; private set; }
 
+        public IReadOnlyCollection<ISkill> RegisteredSkills => _skills.Values;
+
         public bool TryRegister(ESkillSlot slot, ISkill skill)
         {
             if (skill == null)
@@ -50,13 +52,8 @@ namespace GameLogic.Units.Skills
                 ActiveSkill = null;
         }
 
-        public void Tick(float dt)
+        public void RefreshActiveSkill()
         {
-            foreach (ISkill skill in _skills.Values)
-            {
-                skill.Tick(dt);
-            }
-
             if (ActiveSkill != null && !ActiveSkill.IsActive)
                 ActiveSkill = null;
         }

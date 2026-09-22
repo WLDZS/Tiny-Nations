@@ -57,10 +57,7 @@ namespace GameLogic.Units.Common
 
             Vector2 targetOffset = targetTransform.position - _view.Transform.position;
             FaceTarget(targetOffset.x);
-            var context = new SkillContext(
-                _owner,
-                _view.Transform.position,
-                _ai.Target);
+            var context = new SkillContext(_ai.Target);
 
             if (_attackSkill.IsTargetInRange(context))
             {
@@ -75,12 +72,7 @@ namespace GameLogic.Units.Common
                 _navigation.UpdateDestination(targetTransform.position);
         }
 
-        public override void OnStop()
-        {
-            ClearState();
-        }
-
-        public override void Dispose()
+        protected override void OnStop()
         {
             ClearState();
         }

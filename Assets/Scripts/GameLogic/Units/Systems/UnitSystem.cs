@@ -3,7 +3,7 @@ using BorFramework;
 using Cysharp.Threading.Tasks;
 using GameLogic.Navigation;
 using GameLogic.Units.Common;
-using GameLogic.Units.Effects;
+using GameLogic.Units.Skills;
 using UnityEngine;
 
 namespace GameLogic.Units
@@ -48,6 +48,9 @@ namespace GameLogic.Units
 
         public void Start()
         {
+            if (_started)
+                return;
+
             _started = true;
             _lifecycleVersion++;
 
@@ -109,6 +112,13 @@ namespace GameLogic.Units
                 Debug.LogError(
                     $"单位配置缺少预制体地址：{request.DefinitionAddress}",
                     definition);
+                definitionLease.Dispose();
+                return null;
+            }
+
+            if (!TryValidateSkills(definition, out string skillError))
+            {
+                Debug.LogError($"单位技能配置无效：{request.DefinitionAddress}，{skillError}", definition);
                 definitionLease.Dispose();
                 return null;
             }
@@ -192,7 +202,15 @@ namespace GameLogic.Units
             EntityId? rigidbodyEntityId = rigidbody != null
                 ? rigidbody.GetEntityId()
                 : null;
-            _entityModule.AddEntity(unit);
+            if (_entityModule.AddEntity(unit) == null)
+            {
+                unit.Dispose();
+                _prefabPoolModule.Return(instance);
+                definitionLease.Dispose();
+                Debug.LogError($"单位注册失败：{request.DefinitionAddress}");
+                return null;
+            }
+
             _units.Add(unit, new UnitRuntime(
                 definitionLease,
                 instance,
@@ -219,9 +237,47 @@ namespace GameLogic.Units
                     runtime.RigidbodyEntityId.Value);
             }
 
-            _entityModule.RemoveEntity(unit);
+            if (!_entityModule.RemoveEntity(unit, () => ReleaseRuntime(runtime)))
+            {
+                unit.Dispose();
+                ReleaseRuntime(runtime);
+            }
+
+            return true;
+        }
+
+        private void ReleaseRuntime(UnitRuntime runtime)
+        {
             _prefabPoolModule.Return(runtime.Instance);
             runtime.DefinitionLease.Dispose();
+        }
+
+        private static bool TryValidateSkills(UnitDefinition definition, out string errorMessage)
+        {
+            var slots = new HashSet<ESkillSlot>();
+            for (int i = 0; i < definition.Skills.Count; i++)
+            {
+                SkillConfig skill = definition.Skills[i];
+                if (skill == null)
+                {
+                    errorMessage = $"技能列表第 {i} 项为空。";
+                    return false;
+                }
+
+                if (!skill.TryValidate(out string skillError))
+                {
+                    errorMessage = $"技能 {skill.name}：{skillError}";
+                    return false;
+                }
+
+                if (!slots.Add(skill.Slot))
+                {
+                    errorMessage = $"技能槽重复：{skill.Slot}。";
+                    return false;
+                }
+            }
+
+            errorMessage = string.Empty;
             return true;
         }
 
@@ -258,6 +314,7 @@ namespace GameLogic.Units
             if (bodyCollider == null)
                 return;
 
+            // 当前单位只与地图发生身体碰撞；Hurtbox 仍用于单位间技能命中。
             foreach (UnitRuntime runtime in _units.Values)
             {
                 Collider2D otherBodyCollider = runtime.BodyCollider;
@@ -356,36 +413,6 @@ namespace GameLogic.Units
         private void OnUnitDamaged(UnitDamageEvent damageEvent)
         {
             damageEvent.Target?.DamageFlash.Play();
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            string sourceName = GetUnitName(damageEvent.Source, "环境");
-            string targetName = GetUnitName(damageEvent.Target, "未知单位");
-            string effectName = damageEvent.GameEffect != null
-                ? damageEvent.GameEffect.name
-                : "未知效果";
-            string remainingHealth = damageEvent.Target != null
-                                     && damageEvent.Target.Attributes.TryGetCurrentValue(
-                                          EUnitAttributeType.Health,
-                                          out float health)
-                ? health.ToString("0.##")
-                : "未知";
-            string message =
-                $"[单位伤害] {sourceName} 对 {targetName} 造成 "
-                + $"{damageEvent.ActualDamage:0.##} 点伤害，"
-                + $"剩余生命：{remainingHealth}，效果：{effectName}";
-
-            if (damageEvent.Target != null
-                && _units.TryGetValue(
-                    damageEvent.Target,
-                    out UnitRuntime targetRuntime)
-                && targetRuntime.Instance != null)
-            {
-                Debug.Log(message, targetRuntime.Instance);
-                return;
-            }
-
-            Debug.Log(message);
-#endif
         }
 
         private void OnUnitDied(UnitDeathEvent deathEvent)
@@ -399,26 +426,6 @@ namespace GameLogic.Units
             }
 
             _pendingDeathUnits.Add(target);
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            string sourceName = GetUnitName(deathEvent.Source, "环境");
-            string targetName = GetUnitName(target, "未知单位");
-            string effectName = deathEvent.KillingEffect != null
-                ? deathEvent.KillingEffect.name
-                : "未知效果";
-            string message =
-                $"[单位死亡] {targetName} 被 {sourceName} 击杀，效果：{effectName}";
-
-            if (_units.TryGetValue(target, out UnitRuntime targetRuntime)
-                && targetRuntime.Instance != null)
-            {
-                Debug.Log(message, targetRuntime.Instance);
-            }
-            else
-            {
-                Debug.Log(message);
-            }
-#endif
         }
 
         private void OnLateUpdate(float dt)
@@ -432,19 +439,5 @@ namespace GameLogic.Units
             _pendingDeathUnits.Clear();
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private string GetUnitName(UnitEntity unit, string fallbackName)
-        {
-            if (unit != null
-                && _units.TryGetValue(unit, out UnitRuntime runtime)
-                && runtime.Instance != null)
-            {
-                string unitName = runtime.Instance.name;
-                return $"{unitName}[Team {unit.Team.TeamId}]";
-            }
-
-            return fallbackName;
-        }
-#endif
     }
 }

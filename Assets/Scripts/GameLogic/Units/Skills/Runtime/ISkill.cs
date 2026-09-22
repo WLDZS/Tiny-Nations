@@ -4,6 +4,11 @@ namespace GameLogic.Units.Skills
     {
         int AnimationStateId { get; }
 
+        /// <summary>
+        /// Changes whenever the current animation must restart, including repeated stages.
+        /// </summary>
+        int AnimationVersion { get; }
+
         bool BlocksMovement { get; }
 
         bool IsActive { get; }

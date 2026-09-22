@@ -16,6 +16,7 @@ namespace GameLogic.MainMenu.UI
                 return;
             }
 
+            _demoButton.interactable = true;
             _demoButton.onClick.AddListener(OnDemoButtonClicked);
         }
 

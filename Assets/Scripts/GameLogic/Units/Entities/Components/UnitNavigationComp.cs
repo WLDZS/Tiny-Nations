@@ -12,6 +12,7 @@ namespace GameLogic.Units.Common
 
         public int RequestVersion { get; private set; }
 
+        // 执行结果由 NavigationLogic 更新；修改请求本身不代表已经执行。
         public EUnitNavigationState State { get; private set; }
 
         public EPathQueryStatus? LastPathQueryStatus { get; private set; }
@@ -23,7 +24,6 @@ namespace GameLogic.Units.Common
             Destination = destination;
             HasDestination = true;
             RequestVersion++;
-            ResetExecutionState();
         }
 
         public void UpdateDestination(Vector2 destination)
@@ -45,35 +45,22 @@ namespace GameLogic.Units.Common
             HasDestination = false;
             Destination = default;
             RequestVersion++;
-            ResetExecutionState();
         }
 
-        public void SetState(EUnitNavigationState state)
+        /// <summary>由导航执行器一起更新状态和原因；进入 Idle 时清除上次查询结果。</summary>
+        public void SetExecutionState(
+            EUnitNavigationState state,
+            EUnitNavigationBlockReason blockReason = EUnitNavigationBlockReason.None)
         {
             State = state;
+            BlockReason = blockReason;
+            if (state == EUnitNavigationState.Idle)
+                LastPathQueryStatus = null;
         }
 
         public void SetPathQueryStatus(EPathQueryStatus status)
         {
             LastPathQueryStatus = status;
-        }
-
-        public void SetBlocked(EUnitNavigationBlockReason reason)
-        {
-            State = EUnitNavigationState.Blocked;
-            BlockReason = reason;
-        }
-
-        public void ClearBlockReason()
-        {
-            BlockReason = EUnitNavigationBlockReason.None;
-        }
-
-        public void ResetExecutionState()
-        {
-            State = EUnitNavigationState.Idle;
-            LastPathQueryStatus = null;
-            BlockReason = EUnitNavigationBlockReason.None;
         }
     }
 }

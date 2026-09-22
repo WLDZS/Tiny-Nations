@@ -16,6 +16,7 @@ namespace GameLogic
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private UnitSpawnPanel _unitSpawnPanel;
+        private UnitCombatLog _unitCombatLog;
 #endif
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -74,8 +75,6 @@ namespace GameLogic
             GameHub.Ins.RegisterModule<IEntityModule>(entityModule);
             GameHub.Ins.RegisterModule<IResourceModule>(resourceModule);
             GameHub.Ins.RegisterModule<IPrefabPoolModule>(prefabPoolModule);
-            GameHub.Ins.RegisterModule<ISaveModule>(new SaveModule());
-            GameHub.Ins.RegisterModule<IConfigModule>(new ConfigModule());
             GameHub.Ins.RegisterModule<ISceneModule>(sceneModule);
             GameHub.Ins.RegisterModule<IUIModule>(uiModule);
             GameHub.Ins.RegisterModule<IGameSystemModule>(gameSystemModule);
@@ -97,6 +96,7 @@ namespace GameLogic
             GameHub.Ins.StartModules();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _unitCombatLog = new UnitCombatLog(eventModule, unitSystem);
             _unitSpawnPanel = new UnitSpawnPanel(resourceModule, unitSystem);
             _unitSpawnPanel.Start();
 #endif
@@ -151,6 +151,8 @@ namespace GameLogic
                 return;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _unitCombatLog?.Dispose();
+            _unitCombatLog = null;
             _unitSpawnPanel?.Dispose();
             _unitSpawnPanel = null;
 #endif

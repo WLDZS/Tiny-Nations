@@ -12,6 +12,8 @@ namespace GameLogic.Units.Skills
 
         public int AnimationStateId { get; }
 
+        public int AnimationVersion { get; private set; }
+
         public bool BlocksMovement => true;
 
         public bool IsActive { get; private set; }
@@ -37,6 +39,7 @@ namespace GameLogic.Units.Skills
                 return false;
 
             IsActive = true;
+            AnimationVersion++;
             _activeTimeElapsedSeconds = 0f;
             _stopRequested = false;
             return true;

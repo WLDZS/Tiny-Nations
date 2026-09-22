@@ -12,6 +12,7 @@ namespace GameLogic.GameFlow
         private readonly IMonoModule _monoModule;
         private readonly IUnitSystem _unitSystem;
         private readonly StateMachine _stateMachine = new();
+        private MainMenuState _mainMenuState;
         private bool _initialized;
         private bool _started;
 
@@ -32,8 +33,9 @@ namespace GameLogic.GameFlow
             if (_initialized)
                 return;
 
-            _stateMachine.AddState(new MainMenuState(_sceneModule, _uiModule, EnterDemo));
-            _stateMachine.AddState(new DemoState(_sceneModule, _unitSystem));
+            _mainMenuState = new MainMenuState(_sceneModule, _uiModule, EnterDemo);
+            _stateMachine.AddState(_mainMenuState);
+            _stateMachine.AddState(new DemoState(_sceneModule, _unitSystem, ReturnToMainMenu));
             _initialized = true;
         }
 
@@ -63,15 +65,23 @@ namespace GameLogic.GameFlow
         {
             Stop();
             _stateMachine.Clear();
+            _mainMenuState = null;
             _initialized = false;
         }
 
+        /// <summary>请求从已就绪的主菜单进入 Demo；返回值只表示请求是否被接受。</summary>
         public bool EnterDemo()
         {
-            if (!_started || !_stateMachine.IsCurrent<MainMenuState>())
+            if (!_started || !_stateMachine.IsCurrent<MainMenuState>() || !_mainMenuState.IsReady)
                 return false;
 
             return _stateMachine.ChangeState<DemoState>();
+        }
+
+        private void ReturnToMainMenu()
+        {
+            if (_started && _stateMachine.IsCurrent<DemoState>())
+                _stateMachine.ChangeState<MainMenuState>();
         }
 
         private void OnUpdate(float dt)

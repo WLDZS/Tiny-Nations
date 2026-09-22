@@ -23,10 +23,19 @@ namespace GameLogic.Navigation
             _groundTilemap = groundTilemap;
             _collisionCollider = collisionCollider;
 
-            foreach (Vector3Int cell in groundTilemap.cellBounds.allPositionsWithin)
+            BoundsInt bounds = groundTilemap.cellBounds;
+            if (bounds.size.x <= 0 || bounds.size.y <= 0 || bounds.size.z <= 0)
+                return;
+
+            // 两层使用相同范围，批量数组与格子遍历按同一索引对应。
+            TileBase[] groundTiles = groundTilemap.GetTilesBlock(bounds);
+            TileBase[] collisionTiles = collisionTilemap.GetTilesBlock(bounds);
+            int index = 0;
+            foreach (Vector3Int cell in bounds.allPositionsWithin)
             {
-                if (groundTilemap.HasTile(cell) && !collisionTilemap.HasTile(cell))
+                if (groundTiles[index] != null && collisionTiles[index] == null)
                     _walkableCells.Add(new Vector3Int(cell.x, cell.y, 0));
+                index++;
             }
         }
 
@@ -51,10 +60,14 @@ namespace GameLogic.Navigation
             return HasClearance(GetCellCenterWorld(cell), clearanceRadius);
         }
 
-        public bool IsPositionWalkable(Vector2 position, float clearanceRadius)
+        /// <summary>解析端点所在格，要求格中心和实际端点均满足单位净空。</summary>
+        public bool TryGetWalkableCell(
+            Vector2 position,
+            float clearanceRadius,
+            out Vector3Int cell)
         {
-            Vector3Int cell = WorldToCell(position);
-            return _walkableCells.Contains(cell) && HasClearance(position, clearanceRadius);
+            cell = WorldToCell(position);
+            return IsWalkable(cell, clearanceRadius) && HasClearance(position, clearanceRadius);
         }
 
         public bool CanTraverse(

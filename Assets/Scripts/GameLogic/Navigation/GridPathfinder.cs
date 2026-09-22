@@ -58,28 +58,26 @@ namespace GameLogic.Navigation
                 {
                     Vector3Int offset = NeighborOffsets[index];
                     Vector3Int neighborCell = currentCell + offset;
-                    if (_closedCells.Contains(neighborCell)
-                        || !map.CanTraverse(currentCell, neighborCell, clearanceRadius))
-                    {
+                    if (_closedCells.Contains(neighborCell))
                         continue;
-                    }
 
                     int moveCost = IsDiagonal(offset)
                         ? DiagonalMoveCost
                         : StraightMoveCost;
                     int costFromStart = currentRecord.CostFromStart + moveCost;
-                    if (_nodeRecords.TryGetValue(neighborCell, out NodeRecord neighborRecord)
-                        && costFromStart >= neighborRecord.CostFromStart)
-                    {
+                    bool hasRecord = _nodeRecords.TryGetValue(neighborCell, out NodeRecord neighborRecord);
+                    if (hasRecord && costFromStart >= neighborRecord.CostFromStart)
                         continue;
-                    }
+
+                    if (!map.CanTraverse(currentCell, neighborCell, clearanceRadius))
+                        continue;
 
                     _nodeRecords[neighborCell] = new NodeRecord(
                         currentCell,
                         costFromStart,
                         costFromStart + GetEstimatedCost(neighborCell, destinationCell));
 
-                    if (!_openCells.Contains(neighborCell))
+                    if (!hasRecord)
                         _openCells.Add(neighborCell);
                 }
             }

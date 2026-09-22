@@ -24,10 +24,18 @@ namespace GameLogic.Units.Skills
                 return;
             }
 
-            _skills.Tick(dt);
+            foreach (ISkill skill in _skills.RegisteredSkills)
+                skill.Tick(dt);
+
+            _skills.RefreshActiveSkill();
         }
 
-        public override void OnStop()
+        protected override void OnStop()
+        {
+            _skills.CancelActiveSkill();
+        }
+
+        protected override void OnDispose()
         {
             _skills.CancelActiveSkill();
         }

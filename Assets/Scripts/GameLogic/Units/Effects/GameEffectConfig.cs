@@ -32,15 +32,21 @@ namespace GameLogic.Units.Effects
 
         internal bool IsValid()
         {
-            if (_damagePerApplication <= 0f)
+            if (!IsFinitePositive(_damagePerApplication))
                 return false;
 
             if (_durationPolicy == EGameEffectDurationPolicy.Instant)
                 return true;
 
-            return _durationSeconds > 0f
-                   && _periodSeconds > 0f
+            return _durationPolicy == EGameEffectDurationPolicy.Duration
+                   && IsFinitePositive(_durationSeconds)
+                   && IsFinitePositive(_periodSeconds)
                    && _periodSeconds <= _durationSeconds;
+        }
+
+        private static bool IsFinitePositive(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value) && value > 0f;
         }
     }
 }

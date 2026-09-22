@@ -6,7 +6,6 @@ namespace GameLogic.Units.Common
     internal sealed class UnitInputLogic : Logic
     {
         private readonly IInputModule _inputModule;
-        private readonly UnitViewComp _view;
         private readonly UnitCommandComp _command;
         private readonly UnitSkillComp _skills;
         private readonly UnitLifeComp _life;
@@ -18,7 +17,6 @@ namespace GameLogic.Units.Common
 
         public UnitInputLogic(
             IInputModule inputModule,
-            UnitViewComp view,
             UnitCommandComp command,
             UnitSkillComp skills,
             UnitLifeComp life,
@@ -27,7 +25,6 @@ namespace GameLogic.Units.Common
             string secondarySkillActionName)
         {
             _inputModule = inputModule;
-            _view = view;
             _command = command;
             _skills = skills;
             _life = life;
@@ -57,7 +54,7 @@ namespace GameLogic.Units.Common
                 _skills.Release(ESkillSlot.Secondary);
         }
 
-        public override void OnStop()
+        protected override void OnStop()
         {
             _command.Clear();
             _skills.CancelActiveSkill();
@@ -65,12 +62,7 @@ namespace GameLogic.Units.Common
 
         private void TryTrigger(ESkillSlot slot)
         {
-            var context = new SkillContext(
-                _skills.Entity,
-                _view.Transform.position,
-                null);
-
-            _skills.TryTrigger(slot, context);
+            _skills.TryTrigger(slot, new SkillContext(null));
         }
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using BorFramework;
 using Cysharp.Threading.Tasks;
 using GameLogic.Units;
@@ -12,13 +13,18 @@ namespace GameLogic.GameFlow.States
 
         private readonly ISceneModule _sceneModule;
         private readonly IUnitSystem _unitSystem;
+        private readonly Action _returnToMainMenu;
         private UnitEntity _playerUnit;
         private int _entryVersion;
 
-        public DemoState(ISceneModule sceneModule, IUnitSystem unitSystem)
+        public DemoState(
+            ISceneModule sceneModule,
+            IUnitSystem unitSystem,
+            Action returnToMainMenu)
         {
             _sceneModule = sceneModule;
             _unitSystem = unitSystem;
+            _returnToMainMenu = returnToMainMenu;
         }
 
         public override void OnEnter()
@@ -42,15 +48,20 @@ namespace GameLogic.GameFlow.States
         {
             if (_sceneModule == null || _unitSystem == null)
             {
-                Debug.LogError("Demo状态进入失败：缺少SceneModule或UnitSystem");
+                FailEntry(entryVersion, "Demo状态进入失败：缺少场景或单位依赖");
                 return;
             }
 
-            if (!await _sceneModule.LoadSceneAsync(DemoSceneAddress))
-            {
-                if (IsCurrent(entryVersion))
-                    Debug.LogError($"Demo状态加载场景失败：{DemoSceneAddress}");
+            while (_sceneModule.IsBusy && IsCurrent(entryVersion))
+                await UniTask.Yield();
 
+            if (!IsCurrent(entryVersion))
+                return;
+
+            if (!_sceneModule.TryGetScene(DemoSceneAddress, out _)
+                && !await _sceneModule.LoadSceneAsync(DemoSceneAddress))
+            {
+                FailEntry(entryVersion, $"Demo状态加载场景失败：{DemoSceneAddress}");
                 return;
             }
 
@@ -75,7 +86,16 @@ namespace GameLogic.GameFlow.States
 
             _playerUnit = unit;
             if (_playerUnit == null)
-                Debug.LogError($"Demo状态生成单位失败：{WarriorBlueDefinitionAddress}");
+                FailEntry(entryVersion, $"Demo状态生成单位失败：{WarriorBlueDefinitionAddress}");
+        }
+
+        private void FailEntry(int entryVersion, string message)
+        {
+            if (!IsCurrent(entryVersion))
+                return;
+
+            Debug.LogError($"{message}；返回主菜单。");
+            _returnToMainMenu?.Invoke();
         }
 
         private bool IsCurrent(int entryVersion)

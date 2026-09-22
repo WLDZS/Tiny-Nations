@@ -4,7 +4,7 @@ namespace GameLogic.Units.Common
     {
         public EUnitAttributeKind Kind { get; }
 
-        public float BaseValue { get; private set; }
+        public float BaseValue { get; }
 
         public float CurrentValue { get; private set; }
 
@@ -23,17 +23,6 @@ namespace GameLogic.Units.Common
             CurrentValue = baseValue;
             HasMaximum = hasMaximum;
             MaximumAttributeType = maximumAttributeType;
-        }
-
-        public void SetBaseAndCurrentValue(float value)
-        {
-            BaseValue = value;
-            CurrentValue = value;
-        }
-
-        public void SetBaseValue(float value)
-        {
-            BaseValue = value;
         }
 
         public void SetCurrentValue(float value)
