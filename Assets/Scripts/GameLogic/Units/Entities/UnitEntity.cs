@@ -1,4 +1,5 @@
 using BorFramework;
+using GameLogic.Navigation;
 using GameLogic.Units.Common;
 using GameLogic.Units.Effects;
 using GameLogic.Units.Skills;
@@ -13,7 +14,15 @@ namespace GameLogic.Units
         private const string GuardActionName = "Crouch";
         private const float MeleeAIVisionRange = 8f;
 
-        public bool IsDead => GetComp<UnitLifeComp>()?.IsDead == true;
+        internal UnitAttributeComp Attributes { get; }
+
+        internal UnitLifeComp Life { get; }
+
+        internal UnitTeamComp Team { get; }
+
+        internal GameEffectComp Effects { get; }
+
+        internal UnitDamageFlashLogic DamageFlash { get; }
 
         internal UnitEntity(
             GameObject gameObject,
@@ -28,53 +37,41 @@ namespace GameLogic.Units
             IUnitQuery unitQuery,
             IUnitRelationResolver relationResolver,
             IEventModule eventModule,
+            INavigationSystem navigationSystem,
             bool usePlayerInput)
         {
             Go = gameObject;
 
-            var command = new UnitCommandComp
-            {
-                Entity = this
-            };
+            var command = new UnitCommandComp();
+            command.Entity = this;
 
             var view = new UnitViewComp(
                 gameObject.transform,
                 animator,
-                spriteRenderer)
-            {
-                Entity = this
-            };
+                spriteRenderer);
+            view.Entity = this;
 
             UnitPhysicsComp physics = null;
             if (rigidbody != null && bodyCollider != null)
             {
-                physics = new UnitPhysicsComp(rigidbody, bodyCollider)
-                {
-                    Entity = this
-                };
+                physics = new UnitPhysicsComp(rigidbody, bodyCollider);
+                physics.Entity = this;
             }
 
-            attributes.Entity = this;
+            Attributes = attributes;
+            Attributes.Entity = this;
 
-            var life = new UnitLifeComp
-            {
-                Entity = this
-            };
+            Life = new UnitLifeComp();
+            Life.Entity = this;
 
-            var team = new UnitTeamComp(teamId)
-            {
-                Entity = this
-            };
+            Team = new UnitTeamComp(teamId);
+            Team.Entity = this;
 
-            var skills = new UnitSkillComp
-            {
-                Entity = this
-            };
+            var skills = new UnitSkillComp();
+            skills.Entity = this;
 
-            var effects = new GameEffectComp(attributes, life, eventModule)
-            {
-                Entity = this
-            };
+            Effects = new GameEffectComp(Attributes, Life, eventModule);
+            Effects.Entity = this;
 
             var skillRuntimeContext = new SkillRuntimeContext(
                 this,
@@ -96,140 +93,119 @@ namespace GameLogic.Units
             }
 
             UnitAIComp ai = null;
+            UnitNavigationComp navigation = null;
             MeleeAttackSkill meleeAttackSkill = null;
+            Vector2 navigationAnchorOffset = Vector2.zero;
+            float navigationClearanceRadius = 0f;
             if (!usePlayerInput
                 && skills.TryGetSkill(ESkillSlot.Primary, out ISkill primarySkill)
                 && primarySkill is MeleeAttackSkill configuredMeleeAttackSkill)
             {
-                meleeAttackSkill = configuredMeleeAttackSkill;
-                ai = new UnitAIComp(MeleeAIVisionRange)
+                bool hasSupportedNavigationGeometry = physics == null
+                                                      || physics.TryGetNavigationGeometry(
+                                                          out navigationAnchorOffset,
+                                                          out navigationClearanceRadius);
+                if (!hasSupportedNavigationGeometry)
                 {
-                    Entity = this
-                };
+                    Debug.LogError(
+                        $"AI单位的身体碰撞体不支持导航净空：{bodyCollider.GetType().Name}。",
+                        gameObject);
+                }
+                else
+                {
+                    meleeAttackSkill = configuredMeleeAttackSkill;
+                    ai = new UnitAIComp(MeleeAIVisionRange);
+                    ai.Entity = this;
+                    navigation = new UnitNavigationComp();
+                    navigation.Entity = this;
+                }
             }
 
-            AddComp(command);
-            AddComp(view);
-            AddComp(attributes);
-            AddComp(life);
-            AddComp(team);
-            AddComp(skills);
-            AddComp(effects);
-
-            if (ai != null)
-                AddComp(ai);
-
-            if (physics != null)
-                AddComp(physics);
-
+            UnitInputLogic inputLogic = null;
+            UnitMeleeAILogic meleeAILogic = null;
+            UnitNavigationLogic navigationLogic = null;
             if (usePlayerInput && inputModule != null)
             {
-                AddLogic(new UnitInputLogic(
+                inputLogic = new UnitInputLogic(
                     inputModule,
                     view,
                     command,
                     skills,
-                    life,
+                    Life,
                     MoveActionName,
                     AttackActionName,
-                    GuardActionName));
+                    GuardActionName);
             }
             else if (ai != null)
             {
-                AddLogic(new UnitMeleeAILogic(
+                meleeAILogic = new UnitMeleeAILogic(
                     this,
                     ai,
                     view,
-                    command,
+                    navigation,
                     skills,
-                    life,
+                    Life,
                     meleeAttackSkill,
-                    unitQuery));
+                    unitQuery);
+                navigationLogic = new UnitNavigationLogic(
+                    view,
+                    command,
+                    navigation,
+                    skills,
+                    Life,
+                    navigationSystem,
+                    navigationAnchorOffset,
+                    navigationClearanceRadius);
             }
 
-            AddLogic(new UnitMovementLogic(
+            var movementLogic = new UnitMovementLogic(
                 view,
                 command,
-                attributes,
+                Attributes,
                 skills,
-                life,
-                physics));
-            AddLogic(new SkillLogic(skills, life));
-            AddLogic(new UnitGameEffectLogic(effects));
-            AddLogic(new UnitDamageFlashLogic(view));
-            AddLogic(new UnitAnimationLogic(
+                Life,
+                physics);
+            var skillLogic = new SkillLogic(skills, Life);
+            var gameEffectLogic = new UnitGameEffectLogic(Effects);
+            DamageFlash = new UnitDamageFlashLogic(view);
+            var animationLogic = new UnitAnimationLogic(
                 view,
                 command,
                 skills,
                 definition.IdleAnimationStateName,
-                definition.MoveAnimationStateName));
-        }
+                definition.MoveAnimationStateName);
 
-        public bool HasAttribute(EUnitAttributeType type)
-        {
-            return GetComp<UnitAttributeComp>()?.HasAttribute(type) == true;
-        }
+            AddComp(command);
+            AddComp(view);
+            AddComp(Attributes);
+            AddComp(Life);
+            AddComp(Team);
+            AddComp(skills);
+            AddComp(Effects);
 
-        public bool TryGetTeamId(out int teamId)
-        {
-            UnitTeamComp team = GetComp<UnitTeamComp>();
-            if (team != null)
-            {
-                teamId = team.TeamId;
-                return true;
-            }
+            if (ai != null)
+                AddComp(ai);
 
-            teamId = 0;
-            return false;
-        }
+            if (navigation != null)
+                AddComp(navigation);
 
-        public bool TryGetAttributeBaseValue(
-            EUnitAttributeType type,
-            out float value)
-        {
-            UnitAttributeComp attributes = GetComp<UnitAttributeComp>();
-            if (attributes != null)
-                return attributes.TryGetBaseValue(type, out value);
+            if (physics != null)
+                AddComp(physics);
 
-            value = 0f;
-            return false;
-        }
+            if (inputLogic != null)
+                AddLogic(inputLogic);
 
-        public bool TryGetAttributeCurrentValue(
-            EUnitAttributeType type,
-            out float value)
-        {
-            UnitAttributeComp attributes = GetComp<UnitAttributeComp>();
-            if (attributes != null)
-                return attributes.TryGetCurrentValue(type, out value);
+            if (meleeAILogic != null)
+                AddLogic(meleeAILogic);
 
-            value = 0f;
-            return false;
-        }
+            if (navigationLogic != null)
+                AddLogic(navigationLogic);
 
-        public bool TryChangeResource(
-            EUnitAttributeType type,
-            float delta,
-            out float actualDelta)
-        {
-            UnitAttributeComp attributes = GetComp<UnitAttributeComp>();
-            if (attributes != null)
-                return attributes.TryChangeResource(type, delta, out actualDelta);
-
-            actualDelta = 0f;
-            return false;
-        }
-
-        public bool TryApplyGameEffect(
-            GameEffectConfig config,
-            UnitEntity source)
-        {
-            return GetComp<GameEffectComp>()?.TryApply(config, source) == true;
-        }
-
-        internal void PlayDamageFlash()
-        {
-            GetLogic<UnitDamageFlashLogic>()?.Play();
+            AddLogic(movementLogic);
+            AddLogic(skillLogic);
+            AddLogic(gameEffectLogic);
+            AddLogic(DamageFlash);
+            AddLogic(animationLogic);
         }
     }
 }

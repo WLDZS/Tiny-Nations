@@ -1,5 +1,6 @@
 using BorFramework;
 using GameLogic.GameFlow;
+using GameLogic.Navigation;
 using GameLogic.Units;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -79,13 +80,16 @@ namespace GameLogic
             GameHub.Ins.RegisterModule<IUIModule>(uiModule);
             GameHub.Ins.RegisterModule<IGameSystemModule>(gameSystemModule);
 
+            INavigationSystem navigationSystem = new NavigationSystem();
             var unitSystem = new UnitSystem(
                 resourceModule,
                 prefabPoolModule,
                 entityModule,
                 inputModule,
                 eventModule,
-                monoModule);
+                monoModule,
+                navigationSystem);
+            gameSystemModule.AddSystem<INavigationSystem>(navigationSystem);
             gameSystemModule.AddSystem<IUnitSystem>(unitSystem);
             gameSystemModule.AddSystem(new GameFlowSystem(sceneModule, uiModule, monoModule, unitSystem));
 

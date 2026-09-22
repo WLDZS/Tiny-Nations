@@ -12,20 +12,20 @@ namespace GameLogic.Units.Common
         private readonly UnitEntity _owner;
         private readonly UnitAIComp _ai;
         private readonly UnitViewComp _view;
-        private readonly UnitCommandComp _command;
+        private readonly UnitNavigationComp _navigation;
         private readonly UnitSkillComp _skills;
         private readonly UnitLifeComp _life;
         private readonly MeleeAttackSkill _attackSkill;
         private readonly IUnitQuery _unitQuery;
         private float _targetSearchTimeRemainingSeconds;
 
-        public override ELogicPhase Phase => ELogicPhase.Navigation;
+        public override ELogicPhase Phase => ELogicPhase.Command;
 
         public UnitMeleeAILogic(
             UnitEntity owner,
             UnitAIComp ai,
             UnitViewComp view,
-            UnitCommandComp command,
+            UnitNavigationComp navigation,
             UnitSkillComp skills,
             UnitLifeComp life,
             MeleeAttackSkill attackSkill,
@@ -34,7 +34,7 @@ namespace GameLogic.Units.Common
             _owner = owner;
             _ai = ai;
             _view = view;
-            _command = command;
+            _navigation = navigation;
             _skills = skills;
             _life = life;
             _attackSkill = attackSkill;
@@ -46,9 +46,12 @@ namespace GameLogic.Units.Common
             if (_life.IsDead
                 || _view.Transform == null
                 || _unitQuery == null
-                || !TryResolveTarget(dt, out Transform targetTransform))
+                || !TryResolveTarget(
+                    dt,
+                    out Transform targetTransform,
+                    out bool targetChanged))
             {
-                _command.Clear();
+                _navigation.ClearDestination();
                 return;
             }
 
@@ -61,12 +64,15 @@ namespace GameLogic.Units.Common
 
             if (_attackSkill.IsTargetInRange(context))
             {
-                _command.Clear();
+                _navigation.ClearDestination();
                 _skills.TryTrigger(ESkillSlot.Primary, context);
                 return;
             }
 
-            _command.SetMoveDirection(targetOffset.normalized);
+            if (targetChanged)
+                _navigation.BeginDestination(targetTransform.position);
+            else
+                _navigation.UpdateDestination(targetTransform.position);
         }
 
         public override void OnStop()
@@ -79,8 +85,12 @@ namespace GameLogic.Units.Common
             ClearState();
         }
 
-        private bool TryResolveTarget(float dt, out Transform targetTransform)
+        private bool TryResolveTarget(
+            float dt,
+            out Transform targetTransform,
+            out bool targetChanged)
         {
+            targetChanged = false;
             if (IsTargetValid(out targetTransform))
             {
                 _targetSearchTimeRemainingSeconds = 0f;
@@ -103,6 +113,7 @@ namespace GameLogic.Units.Common
             }
 
             _ai.SetTarget(target);
+            targetChanged = true;
             return IsTargetValid(out targetTransform);
         }
 
@@ -111,7 +122,7 @@ namespace GameLogic.Units.Common
             targetTransform = null;
             UnitEntity target = _ai.Target;
             return target != null
-                   && !target.IsDead
+                   && !target.Life.IsDead
                    && _unitQuery.TryGetUnitTransform(target, out targetTransform);
         }
 
@@ -129,8 +140,8 @@ namespace GameLogic.Units.Common
         private void ClearState()
         {
             _ai.ClearTarget();
+            _navigation.ClearDestination();
             _targetSearchTimeRemainingSeconds = 0f;
-            _command.Clear();
         }
     }
 }

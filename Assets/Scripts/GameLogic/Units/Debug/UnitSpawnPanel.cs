@@ -375,24 +375,24 @@ namespace GameLogic.Units
         private static string BuildSpawnStatus(UnitEntity unit, string displayName)
         {
             string status = $"已生成 {displayName}。";
+            var attributes = unit.Attributes;
 
-            if (unit.TryGetTeamId(out int teamId))
-                status += $"\nTeamId：{teamId}";
+            status += $"\nTeamId：{unit.Team.TeamId}";
 
-            if (unit.TryGetAttributeCurrentValue(
+            if (attributes.TryGetCurrentValue(
                     EUnitAttributeType.Health,
                     out float health)
-                && unit.TryGetAttributeCurrentValue(
+                && attributes.TryGetCurrentValue(
                     EUnitAttributeType.MaxHealth,
                     out float maxHealth))
             {
                 status += $"\nHealth：{health:0.##} / {maxHealth:0.##}";
             }
 
-            if (unit.TryGetAttributeBaseValue(
+            if (attributes.TryGetBaseValue(
                     EUnitAttributeType.MoveSpeed,
                     out float baseMoveSpeed)
-                && unit.TryGetAttributeCurrentValue(
+                && attributes.TryGetCurrentValue(
                     EUnitAttributeType.MoveSpeed,
                     out float currentMoveSpeed))
             {
@@ -400,10 +400,10 @@ namespace GameLogic.Units
                     $"\nMoveSpeed Base / Current：{baseMoveSpeed:0.##} / {currentMoveSpeed:0.##}";
             }
 
-            if (unit.TryGetAttributeCurrentValue(
+            if (attributes.TryGetCurrentValue(
                     EUnitAttributeType.Mana,
                     out float mana)
-                && unit.TryGetAttributeCurrentValue(
+                && attributes.TryGetCurrentValue(
                     EUnitAttributeType.MaxMana,
                     out float maxMana))
             {

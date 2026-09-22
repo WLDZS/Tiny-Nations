@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using BorFramework;
 using Cysharp.Threading.Tasks;
+using GameLogic.Navigation;
 using GameLogic.Units.Common;
 using GameLogic.Units.Effects;
 using UnityEngine;
@@ -15,6 +16,7 @@ namespace GameLogic.Units
         private readonly IInputModule _inputModule;
         private readonly IEventModule _eventModule;
         private readonly IMonoModule _monoModule;
+        private readonly INavigationSystem _navigationSystem;
         private readonly Dictionary<UnitEntity, UnitRuntime> _units = new();
         private readonly Dictionary<EntityId, UnitEntity> _unitsByRigidbodyEntityId = new();
         private readonly List<UnitEntity> _despawnBuffer = new();
@@ -28,7 +30,8 @@ namespace GameLogic.Units
             IEntityModule entityModule,
             IInputModule inputModule,
             IEventModule eventModule,
-            IMonoModule monoModule)
+            IMonoModule monoModule,
+            INavigationSystem navigationSystem)
         {
             _resourceModule = resourceModule;
             _prefabPoolModule = prefabPoolModule;
@@ -36,6 +39,7 @@ namespace GameLogic.Units
             _inputModule = inputModule;
             _eventModule = eventModule;
             _monoModule = monoModule;
+            _navigationSystem = navigationSystem;
         }
 
         public void Init()
@@ -183,6 +187,7 @@ namespace GameLogic.Units
                 this,
                 this,
                 _eventModule,
+                _navigationSystem,
                 request.UsePlayerInput);
             EntityId? rigidbodyEntityId = rigidbody != null
                 ? rigidbody.GetEntityId()
@@ -191,12 +196,14 @@ namespace GameLogic.Units
             _units.Add(unit, new UnitRuntime(
                 definitionLease,
                 instance,
+                bodyCollider,
                 rigidbodyEntityId));
 
             if (rigidbodyEntityId.HasValue)
                 _unitsByRigidbodyEntityId.Add(rigidbodyEntityId.Value, unit);
 
             instance.SetActive(true);
+            IgnoreOtherUnitBodyCollisions(bodyCollider);
             ResetAnimator(definition, animator);
             return unit;
         }
@@ -246,6 +253,24 @@ namespace GameLogic.Units
             animator.Update(0f);
         }
 
+        private void IgnoreOtherUnitBodyCollisions(Collider2D bodyCollider)
+        {
+            if (bodyCollider == null)
+                return;
+
+            foreach (UnitRuntime runtime in _units.Values)
+            {
+                Collider2D otherBodyCollider = runtime.BodyCollider;
+                if (otherBodyCollider == null || otherBodyCollider == bodyCollider)
+                    continue;
+
+                Physics2D.IgnoreCollision(
+                    bodyCollider,
+                    otherBodyCollider,
+                    true);
+            }
+        }
+
         public bool TryGetUnit(Collider2D collider, out UnitEntity unit)
         {
             unit = null;
@@ -288,7 +313,7 @@ namespace GameLogic.Units
                 UnitEntity candidate = pair.Key;
                 GameObject instance = pair.Value.Instance;
                 if (candidate == null
-                    || candidate.IsDead
+                    || candidate.Life.IsDead
                     || instance == null
                     || !TryGetRelation(source, candidate, out EUnitRelation relation)
                     || relation != EUnitRelation.Enemy)
@@ -322,13 +347,7 @@ namespace GameLogic.Units
                 return true;
             }
 
-            if (!source.TryGetTeamId(out int sourceTeamId)
-                || !target.TryGetTeamId(out int targetTeamId))
-            {
-                return false;
-            }
-
-            relation = sourceTeamId == targetTeamId
+            relation = source.Team.TeamId == target.Team.TeamId
                 ? EUnitRelation.Ally
                 : EUnitRelation.Enemy;
             return true;
@@ -336,7 +355,7 @@ namespace GameLogic.Units
 
         private void OnUnitDamaged(UnitDamageEvent damageEvent)
         {
-            damageEvent.Target?.PlayDamageFlash();
+            damageEvent.Target?.DamageFlash.Play();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             string sourceName = GetUnitName(damageEvent.Source, "环境");
@@ -345,9 +364,9 @@ namespace GameLogic.Units
                 ? damageEvent.GameEffect.name
                 : "未知效果";
             string remainingHealth = damageEvent.Target != null
-                                     && damageEvent.Target.TryGetAttributeCurrentValue(
-                                         EUnitAttributeType.Health,
-                                         out float health)
+                                     && damageEvent.Target.Attributes.TryGetCurrentValue(
+                                          EUnitAttributeType.Health,
+                                          out float health)
                 ? health.ToString("0.##")
                 : "未知";
             string message =
@@ -421,9 +440,7 @@ namespace GameLogic.Units
                 && runtime.Instance != null)
             {
                 string unitName = runtime.Instance.name;
-                return unit.TryGetTeamId(out int teamId)
-                    ? $"{unitName}[Team {teamId}]"
-                    : unitName;
+                return $"{unitName}[Team {unit.Team.TeamId}]";
             }
 
             return fallbackName;

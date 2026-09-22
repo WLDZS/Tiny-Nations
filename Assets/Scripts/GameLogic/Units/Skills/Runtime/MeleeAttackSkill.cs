@@ -212,7 +212,7 @@ namespace GameLogic.Units.Skills
                     || target == null
                     || hitUnits.Contains(target)
                     || !CanAffectTarget(target)
-                    || !target.TryGetAttributeCurrentValue(
+                    || !target.Attributes.TryGetCurrentValue(
                         EUnitAttributeType.Health,
                         out float health)
                     || health <= 0f)
@@ -285,7 +285,7 @@ namespace GameLogic.Units.Skills
             {
                 GameEffectConfig gameEffect = gameEffects[i];
                 if (gameEffect != null)
-                    target.TryApplyGameEffect(gameEffect, _runtimeContext.Owner);
+                    target.Effects.TryApply(gameEffect, _runtimeContext.Owner);
             }
         }
 
