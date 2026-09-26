@@ -65,7 +65,7 @@ GameLogic
 
 1. 初始化 `GameHub`。
 2. 创建模块并按接口类型注册。
-3. 安装全程运行的 GameFlowSystem；导航和单位 System 由对应场景状态在场景加载后安装。
+3. 安装全程运行的 GameFlowSystem；单位 System 由 Demo 状态在场景加载后安装。
 4. 按注册顺序调用各模块的 `Init()` 和 `Start()`，其中业务 System 随 `GameSystemModule` 一起启动。
 5. 在自身 `Start()` 中发布 `FrameworkReadyEvent`。
 6. 将 Unity 的三类帧回调转发到 `IMonoModule`。
@@ -180,7 +180,7 @@ Entity 通过 `IEntityModule.AddEntity()` 转移所有权并加入更新；空�
 `Phase` 用于单个 Entity 内的执行排序：
 
 ```text
-Input → Command → Navigation → Movement → Targeting
+Input → Command → Movement → Targeting
       → Combat → StatusEffect → Cleanup → Presentation
 ```
 
@@ -273,7 +273,7 @@ View 中调用 `Bind(property, listener)` 建立的绑定，会在 View 解绑�
 uiModule.Register<MainMenuView, MainMenuViewModel>(
     "MainMenuView",
     EUILayer.Screen,
-    () => new MainMenuViewModel(EnterDemo, EnterNavigationTest));
+    () => new MainMenuViewModel(EnterDemo));
 
 await uiModule.PushScreenAsync<MainMenuView>();
 ```
@@ -311,7 +311,7 @@ eventModule.Unsubscribe<HealthChangedEvent>(OnHealthChanged);
 
 ## 10. 当前业务流程如何串起整个框架
 
-当前正式流程从框架启动进入主菜单，再由用户选择 Demo 或导航测试场景：
+当前正式流程从框架启动进入主菜单，再由用户选择 Demo：
 
 ```text
 GameBoot 初始化模块并安装 GameFlowSystem
@@ -319,9 +319,9 @@ GameBoot 初始化模块并安装 GameFlowSystem
   → MainMenuState 加载 MainMenu 场景
   → 注册并打开 MainMenuView
   → MainMenuViewModel 接收场景入口回调
-  → 点击 Demo 或 Navigation Test 按钮后切换对应状态
-  → 状态加载场景并安装 NavigationSceneSystems
-  → Demo 额外生成玩家单位；导航测试场景可用调试面板生成单位
+  → 点击 Demo 按钮后切换状态
+  → 状态加载场景并安装 UnitSceneSystems
+  → Demo 生成玩家单位；调试面板可生成其他单位
 ```
 
 MainMenuState 使用进入版本使旧异步结果失效，场景已加载时可直接重新注册、打开菜单；退出时销毁菜单注册，保证 GameFlowSystem Stop 后再次 Start 能重新进入。只有菜单场景与 View 均已就绪时才接受 EnterDemo。Demo 场景加载或玩家生成失败会记录错误并返回主菜单。这里描述控制流，尚未用本次运行结果验收。

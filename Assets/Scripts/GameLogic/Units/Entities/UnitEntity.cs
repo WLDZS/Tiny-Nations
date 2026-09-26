@@ -1,8 +1,8 @@
 using BorFramework;
-using GameLogic.Navigation;
 using GameLogic.Units.Common;
 using GameLogic.Units.Effects;
 using GameLogic.Units.Skills;
+using GameLogic.Navigation;
 using UnityEngine;
 
 namespace GameLogic.Units
@@ -13,16 +13,14 @@ namespace GameLogic.Units
         private const string AttackActionName = "Attack";
         private const string GuardActionName = "Crouch";
         private const float MeleeAIVisionRange = 8f;
+        private readonly UnitNavigationLogic _navigationLogic;
+        private readonly UnitSkillComp _skills;
 
         internal UnitAttributeComp Attributes { get; }
 
         internal UnitLifeComp Life { get; }
 
         internal UnitTeamComp Team { get; }
-
-        internal UnitNavigationComp Navigation { get; }
-
-        internal UnitPhysicsComp Physics { get; }
 
         internal UnitGameEffectLogic Effects { get; }
 
@@ -40,9 +38,9 @@ namespace GameLogic.Units
             int teamId,
             IInputModule inputModule,
             IUnitQuery unitQuery,
+            INavigationSystem navigation,
             IUnitRelationResolver relationResolver,
             IEventModule eventModule,
-            INavigationSystem navigationSystem,
             bool usePlayerInput)
         {
             Go = gameObject;
@@ -64,8 +62,6 @@ namespace GameLogic.Units
                 physics.Entity = this;
             }
 
-            Physics = physics;
-
             Attributes = attributes;
             Attributes.Entity = this;
 
@@ -77,14 +73,13 @@ namespace GameLogic.Units
 
             var skills = new UnitSkillComp();
             skills.Entity = this;
+            _skills = skills;
 
             var effects = new GameEffectComp();
             effects.Entity = this;
 
             var skillRuntimeContext = new SkillRuntimeContext(
                 this,
-                worldPositionTransform,
-                view,
                 unitQuery,
                 relationResolver);
 
@@ -95,40 +90,22 @@ namespace GameLogic.Units
             }
 
             UnitAIComp ai = null;
-            UnitNavigationComp navigation = null;
             MeleeAttackSkill meleeAttackSkill = null;
-            Vector2 navigationAnchorOffset = Vector2.zero;
-            float navigationClearanceRadius = 0f;
             if (!usePlayerInput
                 && skills.TryGetSkill(ESkillSlot.Primary, out ISkill primarySkill)
                 && primarySkill is MeleeAttackSkill configuredMeleeAttackSkill)
             {
-                bool hasSupportedNavigationGeometry = physics == null
-                                                      || physics.TryGetNavigationGeometry(
-                                                          worldPositionTransform,
-                                                          out navigationAnchorOffset,
-                                                          out navigationClearanceRadius);
-                if (!hasSupportedNavigationGeometry)
-                {
-                    Debug.LogError(
-                        $"AI单位的身体碰撞体不支持导航净空：{bodyCollider.GetType().Name}。",
-                        gameObject);
-                }
-                else
-                {
-                    meleeAttackSkill = configuredMeleeAttackSkill;
-                    ai = new UnitAIComp(MeleeAIVisionRange);
-                    ai.Entity = this;
-                    navigation = new UnitNavigationComp();
-                    navigation.Entity = this;
-                }
+                meleeAttackSkill = configuredMeleeAttackSkill;
+                ai = new UnitAIComp(MeleeAIVisionRange);
+                ai.Entity = this;
             }
-
-            Navigation = navigation;
 
             UnitInputLogic inputLogic = null;
             UnitMeleeAILogic meleeAILogic = null;
-            UnitNavigationLogic navigationLogic = null;
+            UnitNavigationLogic navigationLogic = navigation != null
+                ? new UnitNavigationLogic(this, command, unitQuery, navigation)
+                : null;
+            _navigationLogic = navigationLogic;
             if (usePlayerInput && inputModule != null)
             {
                 inputLogic = new UnitInputLogic(
@@ -146,20 +123,11 @@ namespace GameLogic.Units
                     this,
                     ai,
                     view,
-                    navigation,
                     skills,
                     Life,
                     meleeAttackSkill,
-                    unitQuery);
-                navigationLogic = new UnitNavigationLogic(
-                    view,
-                    command,
-                    navigation,
-                    skills,
-                    Life,
-                    navigationSystem,
-                    navigationAnchorOffset,
-                    navigationClearanceRadius);
+                    unitQuery,
+                    navigationLogic);
             }
 
             var movementLogic = new UnitMovementLogic(
@@ -168,7 +136,10 @@ namespace GameLogic.Units
                 Attributes,
                 skills,
                 Life,
-                physics);
+                physics,
+                this,
+                navigationLogic != null ? unitQuery : null,
+                navigationLogic != null ? navigation : null);
             var skillLogic = new SkillLogic(skills, Life);
             Effects = new UnitGameEffectLogic(this, effects, Attributes, Life, eventModule);
             DamageFlash = new UnitDamageFlashLogic(view);
@@ -193,6 +164,16 @@ namespace GameLogic.Units
             AddLogic(Effects);
             AddLogic(DamageFlash);
             AddLogic(animationLogic);
+        }
+
+        internal bool TryMoveTo(Vector2 destination)
+        {
+            if (Life.IsDead || _navigationLogic == null
+                || !_navigationLogic.TrySetMoveDestination(destination))
+                return false;
+
+            _skills.CancelActiveSkill();
+            return true;
         }
     }
 }

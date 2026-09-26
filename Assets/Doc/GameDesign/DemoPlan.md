@@ -29,10 +29,10 @@
 | GameFlow连接主菜单和Demo，UnitSystem可加载Definition并租用Prefab | [GameFlowSystem](../../Scripts/GameLogic/GameFlow/GameFlowSystem.cs)、[UnitSystem](../../Scripts/GameLogic/Units/Systems/UnitSystem.cs) | 可复用流程与资源生命周期，不表示已有对战房间 |
 | 有7个Definition及对应属性/技能；现值基本都是100HP、移速3、单次伤害10 | [Definitions](../../GameAsset/Units/Definitions/)、[BasicMeleeDamage](../../GameAsset/GameEffects/BasicMeleeDamage.asset) | 是原型测试数据，不是本稿最终兵种和数值 |
 | WarriorBlue、Spider有身体物理与Hurtbox；其余五个测试Prefab尚缺相关组件 | [Units目录](../../GameAsset/Units/)、[Unit制作规范](../UnitPrefabAuthoring.md) | 不能把7个Definition都当作完整战斗验收基线 |
-| 近战技能对命中框内多个敌人逐个应用效果；Warrior有两个伤害窗口 | [MeleeAttackSkill](../../Scripts/GameLogic/Units/Skills/Runtime/MeleeAttackSkill.cs) | 必须明确改单目标结算，防止人数上升后群伤失控 |
+| 近战技能已改为一次锁定一个目标；Warrior有两个伤害窗口，现有技能资产攻击范围暂统一为0.5 | [MeleeAttackSkill](../../Scripts/GameLogic/Units/Skills/Runtime/MeleeAttackSkill.cs) | 运行验收单目标结算与两段命中，再按兵种调整范围 |
 | Guard有减伤字段，但当前伤害结算没有使用它 | [GuardSkill](../../Scripts/GameLogic/Units/Skills/Runtime/GuardSkill.cs)、[UnitGameEffectLogic](../../Scripts/GameLogic/Units/Entities/Logic/UnitGameEffectLogic.cs) | 本稿不启用Guard，不把动画当作有效减伤 |
-| 玩家输入与AI互斥装配；现AI找最近敌人后可持续追逐 | [UnitEntity](../../Scripts/GameLogic/Units/Entities/UnitEntity.cs)、[UnitMeleeAILogic](../../Scripts/GameLogic/Units/Entities/Logic/UnitMeleeAILogic.cs) | RTS指令优先级、追击上限、不可达换目标仍需开发 |
-| 导航是Ground减Collision的静态八方向A*，单位身体互相忽略碰撞 | [导航职责](../NavigationArchitectureReview.md)、[世界放置规范](../../GameAsset/World/WorldPlacementGuide.md) | 预设地块可以沿用静态阻挡；军队分离与敌军不能穿身需补齐 |
+| 玩家输入与AI互斥装配；近战AI会沿静态网格接近视野内敌人，入射程后停步攻击 | [UnitMeleeAILogic](../../Scripts/GameLogic/Units/Entities/Logic/UnitMeleeAILogic.cs)、[UnitNavigationLogic](../../Scripts/GameLogic/Units/Entities/Logic/UnitNavigationLogic.cs) | RTS指令优先级、不可达时换目标仍需开发；运行效果待验收 |
+| Ground/Collision 网格已支持静态路径查询；近战追击分配站位，移动中的 AI 做局部分离，单位身体仍互相忽略碰撞 | [NavigationSystem](../../Scripts/GameLogic/Navigation/NavigationSystem.cs)、[世界放置规范](../../GameAsset/World/WorldPlacementGuide.md) | 敌军不能穿身与拥挤窄路排队仍需实现 |
 | 没有本稿要求的远程、治疗、采集、生产、人口、对战胜负和房间业务 | [GameLogic](../../Scripts/GameLogic/)、[项目简报](../../../PROJECT_BRIEF.md) | 有素材不等于直接配置几个数字就能完成RTS |
 
 当前近战原型的冷却从起手开始计时，与动作并行；不能用“10伤害÷0.25秒冷却”把现有技能当作40DPS。策划表重新规定完整攻击周期，避免两种解释混用。

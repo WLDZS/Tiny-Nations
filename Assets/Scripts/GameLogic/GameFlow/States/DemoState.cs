@@ -1,26 +1,24 @@
 using System;
 using BorFramework;
 using Cysharp.Threading.Tasks;
-using GameLogic.Units;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace GameLogic.GameFlow.States
 {
     public sealed class DemoState : State
     {
         private const string DemoSceneAddress = "Demo";
-        private const string WarriorBlueDefinitionAddress = "WarriorBlueDefinition";
 
         private readonly ISceneModule _sceneModule;
-        private readonly Func<NavigationSceneSystems> _createSceneSystems;
+        private readonly Func<UnitSceneSystems> _createSceneSystems;
         private readonly Action _returnToMainMenu;
-        private NavigationSceneSystems _sceneSystems;
-        private UnitEntity _playerUnit;
+        private UnitSceneSystems _sceneSystems;
         private int _entryVersion;
 
         public DemoState(
             ISceneModule sceneModule,
-            Func<NavigationSceneSystems> createSceneSystems,
+            Func<UnitSceneSystems> createSceneSystems,
             Action returnToMainMenu)
         {
             _sceneModule = sceneModule;
@@ -38,10 +36,6 @@ namespace GameLogic.GameFlow.States
         {
             _entryVersion++;
 
-            if (_playerUnit != null)
-                _sceneSystems?.UnitSystem?.Despawn(_playerUnit);
-
-            _playerUnit = null;
             _sceneSystems?.Dispose();
             _sceneSystems = null;
         }
@@ -70,33 +64,18 @@ namespace GameLogic.GameFlow.States
             if (!IsCurrent(entryVersion))
                 return;
 
+            if (!_sceneModule.TryGetScene(DemoSceneAddress, out Scene scene))
+            {
+                FailEntry(entryVersion, $"Demo状态无法获取已加载场景：{DemoSceneAddress}");
+                return;
+            }
+
             _sceneSystems = _createSceneSystems();
-            if (_sceneSystems == null || !_sceneSystems.Start())
+            if (_sceneSystems == null || !_sceneSystems.Start(scene))
             {
                 FailEntry(entryVersion, "Demo场景系统启动失败");
                 return;
             }
-
-            var spawnRequest = new UnitSpawnRequest(
-                WarriorBlueDefinitionAddress,
-                Vector3.zero,
-                Quaternion.identity,
-                1,
-                true);
-            IUnitSystem unitSystem = _sceneSystems.UnitSystem;
-            UnitEntity unit = await unitSystem.SpawnAsync(spawnRequest);
-
-            if (!IsCurrent(entryVersion))
-            {
-                if (unit != null)
-                    unitSystem.Despawn(unit);
-
-                return;
-            }
-
-            _playerUnit = unit;
-            if (_playerUnit == null)
-                FailEntry(entryVersion, $"Demo状态生成单位失败：{WarriorBlueDefinitionAddress}");
         }
 
         private void FailEntry(int entryVersion, string message)

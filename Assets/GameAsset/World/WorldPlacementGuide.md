@@ -41,15 +41,14 @@ World
 
 ## 障碍物与碰撞
 
-- `Grid/Collision` 定义地形的物理碰撞，也提供静态导航的阻挡格。水域、地图边界和悬崖墙脚使用 `CollisionTiles/Tiles` 下的红色碰撞 Tile 绘制，不要把整张视觉 Tile 的占格直接当作碰撞。
+- `Grid/Collision` 定义地形的物理碰撞。水域、地图边界和悬崖墙脚使用 `CollisionTiles/Tiles` 下的红色碰撞 Tile 绘制，不要把整张视觉 Tile 的占格直接当作碰撞。
 - `Collision` 使用 `Obstacle` Physics Layer、Static `Rigidbody2D`、`TilemapCollider2D` 和 `CompositeCollider2D`。Tilemap Collider 通过 `Merge` 合并到 Composite，Composite 使用 `Polygons` 生成实心阻挡区域。
 - `Collision` 的 `TilemapRenderer` 默认关闭。需要编辑时可以临时开启 Renderer 查看红色碰撞 Tile，完成后重新关闭。`CollisionPalette.prefab` 可作为 Tile Palette 使用。
 - `Collisions@20_0` 是完整方格；其余 Tile 提供半格、斜边等轮廓，需要斜坡或转角阻挡时再选用。
 - 悬崖墙面可能跨多个格子：只有最下面接触地面的墙脚格负责阻挡，上方墙面只负责遮挡后方道路和单位。当前地形中 `Tilemap_color1_34~36` 是墙脚；其余上层墙面不参与碰撞，但视觉上仍与墙脚放在同一个悬崖段中。
 - `WorldObjects/Obstacles` 下的永久障碍 Prefab 根节点使用 `Obstacle` Physics Layer，并在逻辑根上放置非 Trigger `Collider2D`。
-- 静态导航在场景绑定时读取 `World/Grid/Ground` 与 `World/Grid/Collision`：Ground 有 Tile 且 Collision 没有 Tile 的格子可走，不需要额外维护导航配置。Collision 有 Tile 的整格均不可走，即使物理轮廓只覆盖其中一部分。
-- 可走格构建后不自动追踪运行时 Tile 变更；当前地图应保持静态。通道还需满足单位半径对 Collision 碰撞体的净空要求，地图边界也应绘制对应碰撞。额外障碍 Prefab 不会自动加入导航可走格判定。
-- 活动单位的实体碰撞体彼此不形成硬阻挡，地形碰撞仍然阻挡移动。`Obstacle` Prefab 的动态导航占格与用于改善拥挤观感的软分离不属于当前初版范围。
+- 旧静态导航已移除；`Ground` 仍是地面 Tilemap，`Collision` 仍通过 Collider2D 阻挡物理移动。地图边界应绘制对应碰撞。
+- 活动单位的实体碰撞体彼此不形成硬阻挡，地形碰撞仍然阻挡移动。追击同一目标的近战 AI 会预约不同站位，移动中的 AI 会对邻近单位做局部分离；这不保证敌军无法穿身。
 
 ## Prefab 命名
 

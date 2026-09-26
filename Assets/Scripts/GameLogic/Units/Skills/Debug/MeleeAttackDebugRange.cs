@@ -7,7 +7,7 @@ namespace GameLogic.Units.Skills
     {
         public Vector2 Center { get; private set; }
 
-        public Vector2 Size { get; private set; }
+        public float Radius { get; private set; }
 
         public bool IsHitWindowActive { get; private set; }
 
@@ -15,11 +15,11 @@ namespace GameLogic.Units.Skills
 
         internal void Set(
             Vector2 center,
-            Vector2 size,
+            float radius,
             bool isHitWindowActive)
         {
             Center = center;
-            Size = size;
+            Radius = radius;
             IsHitWindowActive = isHitWindowActive;
             LastUpdatedFrame = Time.frameCount;
         }

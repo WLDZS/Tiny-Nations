@@ -14,6 +14,7 @@ Shader "Game/Units/Sprite Flash"
 
         _FlashColor("Flash Color", Color) = (1, 1, 1, 1)
         _FlashAmount("Flash Amount", Range(0, 1)) = 0
+        _SelectionOutline("Selection Outline", Range(0, 1)) = 0
     }
 
     SubShader
@@ -61,7 +62,10 @@ Shader "Game/Units/Sprite Flash"
                 half4 _Color;
                 half4 _FlashColor;
                 half _FlashAmount;
+                half _SelectionOutline;
             CBUFFER_END
+
+            float4 _MainTex_TexelSize;
 
             Varyings SpriteFlashVertex(Attributes input)
             {
@@ -78,6 +82,22 @@ Shader "Game/Units/Sprite Flash"
             {
                 half4 color = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv) * input.color;
                 color.rgb = lerp(color.rgb, _FlashColor.rgb, saturate(_FlashAmount));
+
+                if (_SelectionOutline > 0.5h && color.a > 0.05h)
+                {
+                    float2 pixel = _MainTex_TexelSize.xy;
+                    half leftAlpha = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex,
+                        input.uv + float2(-pixel.x, 0)).a;
+                    half rightAlpha = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex,
+                        input.uv + float2(pixel.x, 0)).a;
+                    half bottomAlpha = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex,
+                        input.uv + float2(0, -pixel.y)).a;
+                    half topAlpha = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex,
+                        input.uv + float2(0, pixel.y)).a;
+                    if (min(min(leftAlpha, rightAlpha), min(bottomAlpha, topAlpha)) < 0.05h)
+                        color.rgb = half3(1, 1, 1);
+                }
+
                 return color;
             }
             ENDHLSL

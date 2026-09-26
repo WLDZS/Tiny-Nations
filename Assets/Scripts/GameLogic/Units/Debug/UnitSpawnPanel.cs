@@ -29,6 +29,7 @@ namespace GameLogic.Units
         private readonly IResourceModule _resourceModule;
         private readonly UnitSystem _unitSystem;
         private readonly UnitWorldDebugOverlay _worldDebugOverlay;
+        private readonly NavigationGridDebugOverlay _navigationGridOverlay;
         private Rect _windowRect = new(8f, 8f, 170f, 36f);
         private Rect _collapsedWindowRect = new(8f, 8f, 190f, 36f);
         private Vector2 _scrollPosition;
@@ -40,8 +41,8 @@ namespace GameLogic.Units
         private bool _isRefreshing;
         private bool _isSpawning;
         private bool _usePlayerInput;
-        private bool _showNavigationGrid;
         private bool _showUnitPositions;
+        private bool _showNavigationGrid;
         private string _teamIdText = "2";
         private int _spawnCount;
         private string _statusMessage = string.Empty;
@@ -49,11 +50,13 @@ namespace GameLogic.Units
         public UnitSpawnPanel(
             IResourceModule resourceModule,
             UnitSystem unitSystem,
-            NavigationSystem navigationSystem)
+            NavigationMap navigationMap)
         {
             _resourceModule = resourceModule;
             _unitSystem = unitSystem;
-            _worldDebugOverlay = new UnitWorldDebugOverlay(navigationSystem, unitSystem);
+            _worldDebugOverlay = new UnitWorldDebugOverlay(unitSystem);
+            if (navigationMap != null)
+                _navigationGridOverlay = new NavigationGridDebugOverlay(navigationMap);
         }
 
         private GUIStyle CollapsedLabelStyle
@@ -102,7 +105,10 @@ namespace GameLogic.Units
             if (!_started || _disposed)
                 return;
 
-            _worldDebugOverlay.Draw(_showNavigationGrid, _showUnitPositions);
+            if (_showNavigationGrid)
+                _navigationGridOverlay?.Draw();
+
+            _worldDebugOverlay.Draw(_showUnitPositions);
             if (!_isExpanded)
             {
                 DrawCollapsedWindow();
@@ -260,16 +266,17 @@ namespace GameLogic.Units
 
         private void DrawDebugButtons()
         {
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button(_showNavigationGrid ? "隐藏寻路网格" : "显示寻路网格"))
-                _showNavigationGrid = !_showNavigationGrid;
-
             if (GUILayout.Button(_showUnitPositions ? "隐藏单位坐标点" : "显示单位坐标点"))
                 _showUnitPositions = !_showUnitPositions;
 
-            GUILayout.EndHorizontal();
+            if (_navigationGridOverlay != null
+                && GUILayout.Button(_showNavigationGrid ? "隐藏导航网格" : "显示导航网格"))
+            {
+                _showNavigationGrid = !_showNavigationGrid;
+            }
+
             if (_showNavigationGrid)
-                GUILayout.Label("绿色：Ground 可走格；红色：Collision 格（未计入单位半径）", StatusStyle);
+                GUILayout.Label("绿色可走 / 红色 Collision / 灰色无 Ground");
         }
 
         private string GetCollapsedButtonText()

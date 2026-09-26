@@ -90229,6 +90229,8 @@ GameObject:
   - component: {fileID: 621859533}
   - component: {fileID: 621859532}
   - component: {fileID: 621859535}
+  - component: {fileID: 621859536}
+  - component: {fileID: 621859537}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -90310,6 +90312,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2000000004}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &621859536
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 621859531}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1da6e6e710b74d4e9f466de81e0a10a8, type: 3}
+  m_Name: ""
+  m_EditorClassIdentifier: Assembly-CSharp::GameLogic.CameraControl.RtsCameraController
+  _edgeWidth: 24
+  _moveSpeed: 12
+  _moveSmoothTime: 0.18
+  _zoomFactor: 0.85
+  _zoomSmoothTime: 0.12
+  _minOrthographicSize: 3
+  _maxOrthographicSize: 15
+--- !u!114 &621859537
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 621859531}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9afff87d01f64f6a963379b1a9a475cd, type: 3}
+  m_Name: ""
+  m_EditorClassIdentifier: Assembly-CSharp::GameLogic.Units.UnitSelectionController
 --- !u!114 &621859535
 MonoBehaviour:
   m_ObjectHideFlags: 0

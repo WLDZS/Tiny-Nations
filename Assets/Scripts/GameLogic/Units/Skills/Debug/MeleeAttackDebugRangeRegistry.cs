@@ -22,7 +22,7 @@ namespace GameLogic.Units.Skills
         public static void Set(
             int id,
             Vector2 center,
-            Vector2 size,
+            float radius,
             bool isHitWindowActive)
         {
             if (!Ranges.TryGetValue(id, out MeleeAttackDebugRange range))
@@ -31,7 +31,7 @@ namespace GameLogic.Units.Skills
                 Ranges.Add(id, range);
             }
 
-            range.Set(center, size, isHitWindowActive);
+            range.Set(center, radius, isHitWindowActive);
         }
 
         public static void Remove(int id)

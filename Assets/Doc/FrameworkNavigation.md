@@ -103,7 +103,7 @@ sequenceDiagram
     Boot->>Hub: StartModules()
     Hub->>Module: Start()（注册顺序）
     Module->>GameFlow: Start()
-    GameFlow->>Module: 玩法场景加载后 AddSystem(Navigation / Unit)
+    GameFlow->>Module: Demo 场景加载后 AddSystem(Unit)
     Unity->>Boot: Start()
     Boot->>Event: Publish(FrameworkReadyEvent)
     loop 每帧
@@ -130,7 +130,7 @@ sequenceDiagram
 
 所有模块实现统一生命周期 [`IModule`](../Scripts/BorFramework/1_Core/Hub/IModule.cs)：`Init → Start → Stop → Dispose`。新增模块时，接口应继承 `IModule`，实现放在 `2_Module` 对应目录，并在 `GameBoot.Init()` 中按依赖顺序注册。
 
-`FrameworkReadyEvent` 只表示模块启动流程已执行，不表示 YooAsset 或首个场景已加载完成。全程业务 System 按 Navigation、Unit、GameFlow 顺序装配。
+`FrameworkReadyEvent` 只表示模块启动流程已执行，不表示 YooAsset 或首个场景已加载完成。全程业务只安装 GameFlowSystem；Demo 场景安装 UnitSystem。
 
 ## 4. 模块 API 速查
 
@@ -315,7 +315,7 @@ flowchart LR
 | `Logic.Block / UnBlock` | 使用计数式阻塞；阻塞期间停止 Tick，解除全部阻塞后重新 `OnStart`。 |
 | `IComp` | 仅约定 `Entity` 引用；使用 `Comp` 或 `CompMono` 作为基类。 |
 
-`ELogicPhase` 执行顺序：`Input(100) → Command(200) → Navigation(300) → Movement(400) → Targeting(500) → Combat(600) → StatusEffect(700) → Cleanup(800) → Presentation(900)`。
+`ELogicPhase` 执行顺序：`Input(100) → Command(200) → Movement(400) → Targeting(500) → Combat(600) → StatusEffect(700) → Cleanup(800) → Presentation(900)`。
 
 排序发生在每个 Entity 内，EntityModule 逐个更新实体。`EntityModule.Stop` 停止所有行为，Start 允许恢复；Dispose 永久释放。Logic 的 Dispose 先停止再调用 OnDispose，重复释放无效。Entity 不再提供 AddComp、GetComp、GetLogic；当前业务示例为 [`UnitEntity`](../Scripts/GameLogic/Units/Entities/UnitEntity.cs)。
 
@@ -360,14 +360,12 @@ flowchart TD
     GameFlow --> MainMenuState["MainMenuState"]
     MainMenuState -->|LoadSceneAsync| MainMenuScene["MainMenu Scene"]
     MainMenuState -->|Register + PushScreenAsync| MainMenuUI["MainMenuView + ViewModel"]
-    MainMenuUI -->|EnterDemo / EnterNavigationTest| GameFlow
+    MainMenuUI -->|EnterDemo| GameFlow
     GameFlow --> DemoState["DemoState"]
     DemoState -->|LoadSceneAsync| DemoScene["Demo Scene"]
-    DemoState -->|安装 Navigation / Unit| DemoScene
+    DemoState -->|安装 UnitSystem| DemoScene
     DemoState -->|SpawnAsync| Player["玩家 UnitEntity"]
     DemoState -->|场景或生成失败| MainMenuState
-    GameFlow --> NavigationTestState["NavigationTestState"]
-    NavigationTestState -->|LoadSceneAsync + 安装 Navigation / Unit| NavigationTestScene["NavigationTest Scene"]
 ```
 
 MainMenuState 的进入版本用于忽略退出后的旧结果；状态退出时销毁菜单注册，GameFlow Stop/Start 后可以重新创建菜单。EnterDemo 仅在菜单场景与 View 均就绪时接收请求，返回值不代表 Demo 已加载完成。Demo 加载或玩家生成失败会记录错误并返回菜单。

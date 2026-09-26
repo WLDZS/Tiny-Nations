@@ -1,6 +1,6 @@
 # Tiny Nations Unit 预制体制作规范
 
-规范版本：`1.14`
+规范版本：`1.17`
 
 本文规定当前项目中可由 `UnitSystem` 加载、由 ELC 驱动并出现在单位调试面板中的 Unit 资产应如何制作。
 它是 Unit 资产制作的唯一事实来源；项目级 Skill 只负责引导 AI 按本文执行，不复制本文内容。
@@ -24,7 +24,7 @@
 - Unit 的 `Rigidbody2D`、身体碰撞与 Hurtbox 配置；
 - 近战查询范围、命中窗口与伤害 `GameEffect`。
 
-本文描述当前源码的运行时契约。当前实现运行时 TeamId、Self/Ally/Enemy 关系、基于场景 Tilemap 的静态导航、基础近战自动战斗和死亡回收；外交、死亡动画、尸体、复活与完整 RTS 命令系统尚未实现。结构整理后的运行与视觉结果仍需在 Unity 中验收。
+本文描述当前源码的运行时契约。当前实现运行时 TeamId、Self/Ally/Enemy 关系、基础近战自动追击和攻击、死亡回收；追击使用场景 Ground/Collision 构建的网格寻路。外交、死亡动画、尸体、复活与完整 RTS 命令系统尚未实现。运行与视觉结果仍需在 Unity 中验收。
 
 ## 2. 核心边界
 
@@ -37,7 +37,7 @@
 7. 属性 SO 只保存共享初始配置；每个生成的单位必须持有独立的运行时属性值，禁止修改共享 SO 表示掉血、耗蓝或临时 Buff。
 8. 战斗队伍是 Unit 实例的运行时数据，由 `UnitSpawnRequest.TeamId` 传入；不要把队伍写死在 Prefab 或 `UnitDefinition` 中，也不要用 Layer 或 Tag 表达敌我关系。
 9. 单位存活状态由通用 `UnitLifeComp` 保存。致死伤害发布一次 `UnitDeathEvent`，停止输入、移动和技能，并由 `UnitSystem` 在当帧 LateUpdate 安全回收；不要在伤害回调中重入销毁 Entity。
-10. 不使用玩家输入且 Primary 槽为 `MeleeAttackSkill` 的 Unit 会获得基础近战 AI；AI 与伤害结算必须复用同一个近战查询框，不维护独立的攻击距离。
+10. 不使用玩家输入且 Primary 槽为 `MeleeAttackSkill` 的 Unit 会获得基础近战 AI；AI 起手与伤害结算复用技能 SO 的攻击范围，每次攻击只锁定一个目标。
 11. Component 保存状态与局部不变量；`SkillLogic` 驱动技能更新，`UnitGameEffectLogic` 执行效果计时、伤害结算和事件发布。`UnitEntity` 直接装配依赖，仅注册需要帧调度的 Logic。
 
 ## 3. 每个 Unit 的交付物
@@ -80,7 +80,7 @@ Prefab 使用以下表现层级：
 ├─ Visual                 # 美术节点，向上偏移到正确视觉位置
 │  ├─ SpriteRenderer
 │  └─ Animator
-└─ Hurtbox                # 需要参与受击判定时手动添加
+└─ Hurtbox                # 需要参与其他物理受击查询时手动添加
    └─ Collider2D
 ```
 
@@ -92,7 +92,7 @@ Prefab 使用以下表现层级：
 2. `Animator.runtimeAnimatorController` 必须指向该 Unit 的 Controller。
 3. 根对象的位置是单位脚底落地点，`SortingGroup` 使用 `World` Sorting Layer、`Sorting Order = 0`；不要用固定高 Order 让单位永久遮住场景物件。
    - `WordPos` 是根对象的直接子节点，只保留 `Transform`。默认局部位置为零；需要调整单位的世界坐标判定点时只移动它，不移动根节点修正美术位置。
-   - 生成请求的位置对应 `WordPos`。导航、近战目标搜索、攻击查询和调试坐标点读取 `WordPos.position`；旧 Prefab 没有该子节点时回退到根节点。根节点仍承载移动、刚体和身体碰撞体。
+   - 生成请求的位置对应 `WordPos`。没有身体碰撞体时，近战距离按 `WordPos.position` 计算；有身体碰撞体时按身体中心与半径计算。旧 Prefab 没有 `WordPos` 时回退到根节点。根节点仍承载移动、刚体和身体碰撞体。
 4. `Visual` 只负责美术偏移和动画，`SpriteRenderer` 应显示 Idle 的有效初始帧，并使用 `World` Sorting Layer、`Sorting Order = 0`。
    - 中心 Pivot 的素材以 Idle 首帧为基准，将“画面中心到脚底接地点”的像素距离除以 PPU，作为 `Visual.localPosition.y`。
    - 偏移量保持在像素网格上，不通过修改逻辑根节点来修正美术位置。
@@ -105,15 +105,15 @@ Prefab 使用以下表现层级：
 2. `Rigidbody2D` 使用 `Dynamic`、`Gravity Scale = 0`、冻结 Z 轴旋转；像素角色建议开启插值。
 3. 身体 `Collider2D` 不勾选 `Is Trigger`，只表达稳定的单位占地，不跟随武器或攻击动画轮廓变化。
 4. 物理组件存在时，`UnitMovementLogic` 通过刚体速度移动；没有物理组件的旧 Unit 暂时保留 Transform 移动。
-5. 近战可攻击范围由技能 SO 的查询框表达，与身体碰撞体是不同概念；不要通过放大身体碰撞体表达攻击范围。
+5. 近战攻击范围由技能 SO 的 `_attackRange` 表达，按双方身体占地边缘间距判断；不要通过放大身体碰撞体表达攻击范围。没有身体碰撞体的旧 Unit 暂按 `WordPos` 点计算。
 
-需要参与伤害判定的 Unit 额外手动添加 Hurtbox：
+需要参与其他物理受击查询的 Unit 可额外手动添加 Hurtbox：
 
 1. Hurtbox 是逻辑根节点的子对象，Layer 使用 `UnitHurtbox`。
 2. Hurtbox 只挂一个符合单位受击轮廓的 `Collider2D`，并勾选 `Is Trigger`。
 3. Hurtbox 不再添加 `Rigidbody2D`；它通过根节点的 `Rigidbody2D` 归属到当前 `UnitEntity`。
-4. 身体碰撞体负责与地图障碍的物理碰撞。当前 `UnitSystem` 在生成时忽略单位身体之间的碰撞，单位可以相互穿过；Hurtbox 继续参与技能查询，不以身体阻挡表达攻击范围。
-5. 当前近战查询只命中技能 SO 中 `_hitLayerMask` 包含的 Layer，因此没有 Hurtbox 的单位不会受到近战伤害。
+4. 身体碰撞体负责与地图障碍的物理碰撞。当前 `UnitSystem` 在生成时忽略单位身体之间的碰撞，单位可以相互穿过。
+5. 当前近战攻击直接锁定目标 Unit，并按双方身体占地判断范围，不依赖 Hurtbox 或 LayerMask。
 
 当前由 `WarriorBlue` 作为真实单位碰撞试点。
 
@@ -208,9 +208,7 @@ Resources
 
 - `_slot`；
 - `_cooldownSeconds`；
-- `_querySize`；
-- `_queryOffset`；
-- `_hitLayerMask`；
+- `_attackRange`；
 - `_targetRelations`；
 - `_hitWindows`；
 - `_gameEffects`；
@@ -225,23 +223,23 @@ Resources
 
 数组不能为空，状态名不能为空，持续时间必须是有限正值；无效阶段会在生成前被拒绝。连续阶段可以引用同一个动画状态，运行时通过技能播放版本在新阶段重新播放该状态。制作时仍需检查 Animator 中确实存在对应状态，字符串非空检查不能替代引用验收。
 
-命中判定使用 `Physics2D.OverlapBox`：
+近战命中按锁定目标结算：
 
-- `_querySize` 是世界单位下的方形或矩形宽高，两个分量都必须大于 0；
-- `_queryOffset` 是以单位朝右为基准、相对 `WordPos` 的偏移；缺少 `WordPos` 时相对逻辑根节点。朝左时运行时自动镜像 X 分量，Y 分量不变；
-- `_hitLayerMask` 通常只选择 `UnitHurtbox`；
+- `_attackRange` 是世界单位下双方身体占地边缘允许的最大间距，必须大于 0；当前默认 0.5，可按单位调整。
+- 具有身体碰撞体时使用身体中心和半径；没有身体碰撞体时使用 `WordPos` 点。非圆形身体碰撞体以包围盒外接圆近似。
 - `_targetRelations` 声明允许命中的关系，可组合 `Self`、`Ally`、`Enemy`；普通攻击只配置 `Enemy`；
 - `_hitWindows` 可配置多个“开始时间 + 持续时间”，时间从本次技能开始时计算；
-- 有效窗口内每个 Tick 都会查询，因此目标在窗口开始后进入范围仍可被命中；
-- 同一个目标在同一个窗口内只命中一次，不同窗口可再次命中。WarriorBlue 当前配置两个窗口，Skull 配置一个窗口；
+- 无显式目标时，起手选择范围内最近的敌人；显式目标只检查该目标。起手后整次攻击锁定同一个目标，不转移伤害。
+- 有效窗口内每个 Tick 复查锁定目标是否存活、关系有效且仍在范围内；目标在窗口开始后重新进入范围仍可被命中。
+- 同一个目标在同一个窗口内只命中一次，不同窗口可再次命中。WarriorBlue 当前配置两个窗口，两段仍打同一目标；Skull 配置一个窗口；
 - `_gameEffects` 是命中后施加给目标的 Effect 列表，可同时配置瞬时伤害与 DoT。
 
-命中窗口与效果列表至少各有一项，所有项必须有效；LayerMask 与目标关系不能空。窗口开始时间必须位于技能总时长内，窗口结束超出总时长时按总时长截断。冷却、查询框和时间等配置不接受 NaN 或 Infinity。
+命中窗口与效果列表至少各有一项，所有项必须有效；攻击范围必须大于 0，目标关系不能空。窗口开始时间必须位于技能总时长内，窗口结束超出总时长时按总时长截断。冷却、攻击范围和时间等配置不接受 NaN 或 Infinity。
 
-同一个查询框也用于基础近战 AI 的起手判断：目标 Unit 的 Hurtbox 进入当前朝向下的 `_queryOffset + _querySize` 区域后，AI 停止移动并尝试释放 Primary；目标不在查询框内时通过导航追击。技能冷却只决定能否起手，不会让已经进入查询框的 AI 继续向目标挤压。因此不存在独立的 `_triggerRange`，调整查询框会同时改变实际命中范围和 AI 停步范围。当前不可达目标仍保持锁定；自动换敌或放弃目标属于另行确定的行为规则。
+同一个 `_attackRange` 也用于基础近战 AI 的起手和追击终点判断。当前 AI 优先选择范围内最近敌人，面向目标并尝试释放 Primary；范围外的视野内目标通过 Ground/Collision 网格寻路接近，进入范围即停下攻击。目标移动时会重新寻路，路径失败时停止移动并隔一段时间重试。攻击过程中只面向锁定目标。技能冷却只决定能否起手，不会扩大攻击范围。
 
-选中 `MeleeAttackSkillConfig` 时，Inspector 提供攻击范围预览，可指定预览基准、切换左右朝向，并在 Scene 视图中直接调整 Offset 与 Size。蓝色实心矩形表示编辑态查询范围。
-运行攻击时，Scene 视图会实时绘制实心查询矩形。黄色表示攻击正在播放但当前不在命中窗口，红色表示当前处于命中窗口。
+选中 `MeleeAttackSkillConfig` 时，Inspector 可指定预览基准；Scene 中的蓝色圆形显示攻击者身体半径加 `_attackRange`。目标身体半径会在实际判定时额外计入。
+运行攻击时，Scene 视图会实时绘制范围圆形。黄色表示攻击正在播放但当前不在命中窗口，红色表示当前处于命中窗口。
 
 ### 8.3 防御
 
@@ -314,8 +312,8 @@ Resources
 3. 检查源 Sprite、Animation Clip、循环设置和真实时长；不要凭名称猜测。
 4. 创建或整理 Animator Controller，确保所有配置使用的状态真实存在。
 5. 创建或复用属性 SO，至少配置 MaxHealth、MoveSpeed，以及上限为 MaxHealth 的 Health。
-6. 创建技能 SO；普通攻击按真实表现填写一段或多段 `_animationStages`，并配置方形查询范围、目标关系、命中窗口和命中后 GameEffect。普通攻击默认只命中 `Enemy`。
-7. 创建脚底为逻辑根、带 `SortingGroup`、空 `WordPos` 和 `Visual` 子节点的表现 Prefab，并正确绑定 Sprite 和 Animator Controller；需要真实物理碰撞时，在根节点成对配置 Dynamic `Rigidbody2D` 与非 Trigger 身体 `Collider2D`；需要受击时手动添加 `UnitHurtbox` Layer 的 Trigger 子碰撞体。
+6. 创建技能 SO；普通攻击按真实表现填写一段或多段 `_animationStages`，并配置 `_attackRange`、目标关系、命中窗口和命中后 GameEffect。普通攻击默认只命中 `Enemy`。
+7. 创建脚底为逻辑根、带 `SortingGroup`、空 `WordPos` 和 `Visual` 子节点的表现 Prefab，并正确绑定 Sprite 和 Animator Controller；需要真实物理碰撞时，在根节点成对配置 Dynamic `Rigidbody2D` 与非 Trigger 身体 `Collider2D`；只有其他物理受击查询需要时才添加 `UnitHurtbox` Layer 的 Trigger 子碰撞体。
 8. 创建 `Definitions/<UnitName>Definition.asset`，填写 Prefab address、属性、移动动画与技能列表。
 9. 检查 GUID 引用、YooAsset address 唯一性和 Collector 覆盖范围。
 10. 进入开发运行环境，用“YooAsset 单位生成”面板选择 TeamId、刷新列表并生成该 Unit；需要受伤的单位还应验证 Health 归零后只死亡一次并在帧末安全移除。
@@ -336,11 +334,11 @@ Resources
 - [ ] 移动时播放 Move，停止时回到 Idle。
 - [ ] Primary 按顺序播放全部攻击动画阶段；单段和多段配置均不依赖兵种专属代码。
 - [ ] 连续相同动画阶段会重新播放；无效技能配置在生成前被拒绝并指出原因。
-- [ ] Primary 的查询范围、偏移、LayerMask、目标关系和全部命中窗口来自技能 SO。
-- [ ] 非玩家控制的近战 Unit 只在目标 Hurtbox 进入同一个技能查询框后停步并尝试攻击，冷却期间不会继续挤向目标。
-- [ ] QueryOffset.x 会随单位左右朝向镜像，实际判定与预览一致。
-- [ ] Scene 视图在编辑态显示蓝色实心查询矩形，运行时窗口外为黄色、窗口内为红色。
-- [ ] Hurtbox 是 `UnitHurtbox` Layer 的 Trigger 子碰撞体，不额外挂刚体。
+- [ ] Primary 的攻击范围、目标关系和全部命中窗口来自技能 SO；`_attackRange` 为正数，可按单位调整。
+- [ ] 非玩家控制的近战 Unit 对视野内范围外敌人沿网格前进，进入技能攻击范围停步并尝试攻击；障碍物阻断时不会穿墙直行。
+- [ ] 一次攻击只锁定一个目标，多个命中窗口复查同一目标，不会转伤附近单位。
+- [ ] Scene 视图在编辑态显示蓝色范围圆形，运行时窗口外为黄色、窗口内为红色。
+- [ ] 若配置 Hurtbox，它是 `UnitHurtbox` Layer 的 Trigger 子碰撞体，不额外挂刚体。
 - [ ] 同一目标在同一命中窗口只结算一次，不同窗口能够再次结算。
 - [ ] Instant GameEffect 立即扣除 Health；Duration GameEffect 按 Period 持续扣除，并且不会修改 Health.BaseValue。
 - [ ] Unit 的 TeamId 来自生成请求；普通攻击能命中不同 TeamId 的 Enemy，不能命中相同 TeamId 的 Ally。
@@ -357,7 +355,7 @@ Resources
 - [ ] Prefab、Definition、技能 SO 及其引用没有 Missing 或丢失 GUID。
 - [ ] YooAsset address 没有重名。
 - [ ] 根节点位于脚底落地点，带 `SortingGroup`，且根与 `Visual` 都使用 `World` / Order 0 的排序设置。
-- [ ] 根节点有直接子节点 `WordPos`，该节点只有 `Transform`；调整其局部位置后，生成、导航、攻击查询与调试坐标仍以它为准，缺失时回退到根节点。
+- [ ] 根节点有直接子节点 `WordPos`，该节点只有 `Transform`；调整其局部位置后，生成、攻击查询与调试坐标仍以它为准，缺失时回退到根节点。
 - [ ] 需要真实物理碰撞的 Unit 在根节点成对配置 Dynamic `Rigidbody2D` 与非 Trigger 身体 `Collider2D`，移动时没有继续直接修改 Transform。
 
 ## 12. 当前基准文件

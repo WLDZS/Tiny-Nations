@@ -14,11 +14,26 @@ namespace GameLogic.Units
         /// <summary>Gets the WordPos world position, or the unit root position when WordPos is absent.</summary>
         bool TryGetUnitWorldPosition(UnitEntity unit, out Vector3 position);
 
-        /// <summary>Reserves a reachable position around a target for one pursuing unit.</summary>
-        bool TryGetApproachPosition(UnitEntity source, UnitEntity target, out Vector3 position);
+        /// <summary>Gets the center and radius used for attack range checks.</summary>
+        bool TryGetUnitAttackFootprint(UnitEntity unit, out Vector2 center, out float radius);
 
-        /// <summary>Releases a pursuing unit's reserved position when its target is lost.</summary>
+        bool IsTargetInAttackRange(UnitEntity source, UnitEntity target, float attackRange);
+
+        bool TryGetApproachPosition(
+            UnitEntity source,
+            UnitEntity target,
+            float attackRange,
+            out Vector2 position,
+            out bool canAttack);
+
         void ReleaseApproachPosition(UnitEntity source);
+
+        Vector2 GetLocalSeparation(UnitEntity source);
+
+        bool TryFindClosestEnemyInAttackRange(
+            UnitEntity source,
+            float attackRange,
+            out UnitEntity unit);
 
         /// <summary>
         /// Finds the closest living enemy inside the supplied world-space range.

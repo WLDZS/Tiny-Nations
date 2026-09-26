@@ -12,8 +12,7 @@ namespace GameLogic.Units.Skills
         private readonly float[] _stageEndTimesSeconds;
         private readonly float[] _hitWindowStartTimesSeconds;
         private readonly float[] _hitWindowEndTimesSeconds;
-        private readonly HashSet<UnitEntity>[] _hitUnitsByWindow;
-        private readonly List<Collider2D> _overlapResults = new();
+        private readonly bool[] _hitAppliedByWindow;
         private readonly float _durationSeconds;
 #if UNITY_EDITOR
         private readonly int _debugRangeId;
@@ -22,6 +21,11 @@ namespace GameLogic.Units.Skills
         private float _activeTimeElapsedSeconds;
         private float _cooldownTimeRemainingSeconds;
         private int _animationStageIndex;
+        private UnitEntity _attackTarget;
+
+        public UnitEntity AttackTarget => _attackTarget;
+
+        public float AttackRange => _config.AttackRange;
 
         public int AnimationStateId { get; private set; }
 
@@ -57,7 +61,7 @@ namespace GameLogic.Units.Skills
             IReadOnlyList<SkillHitWindow> hitWindows = config.HitWindows;
             _hitWindowStartTimesSeconds = new float[hitWindows.Count];
             _hitWindowEndTimesSeconds = new float[hitWindows.Count];
-            _hitUnitsByWindow = new HashSet<UnitEntity>[hitWindows.Count];
+            _hitAppliedByWindow = new bool[hitWindows.Count];
 
             for (int i = 0; i < hitWindows.Count; i++)
             {
@@ -66,7 +70,6 @@ namespace GameLogic.Units.Skills
                 _hitWindowEndTimesSeconds[i] = Mathf.Min(
                     hitWindow.StartTimeSeconds + hitWindow.DurationSeconds,
                     _durationSeconds);
-                _hitUnitsByWindow[i] = new HashSet<UnitEntity>();
             }
 
 #if UNITY_EDITOR
@@ -76,23 +79,19 @@ namespace GameLogic.Units.Skills
 
         public bool IsTargetInRange(in SkillContext context)
         {
-            if (!context.HasTarget || !CanQueryAttackArea())
-                return false;
+            return context.HasTarget && IsValidTargetInRange(context.Target);
+        }
 
-            QueryAttackArea();
-            for (int i = 0; i < _overlapResults.Count; i++)
-            {
-                Collider2D hitCollider = _overlapResults[i];
-                if (_runtimeContext.UnitQuery.TryGetUnit(
-                        hitCollider,
-                        out UnitEntity target)
-                    && target == context.Target)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+        public bool TryFindTargetInRange(out UnitEntity target)
+        {
+            target = null;
+            return _runtimeContext.UnitQuery != null
+                   && (_config.TargetRelations & EUnitTargetRelation.Enemy) != 0
+                   && _runtimeContext.UnitQuery.TryFindClosestEnemyInAttackRange(
+                       _runtimeContext.Owner,
+                       _config.AttackRange,
+                       out target)
+                   && IsValidTargetInRange(target);
         }
 
         public bool CanTrigger(in SkillContext context)
@@ -100,14 +99,29 @@ namespace GameLogic.Units.Skills
             if (_animationStateIds.Length == 0 || IsActive || _cooldownTimeRemainingSeconds > 0f)
                 return false;
 
-            return !context.HasTarget || IsTargetInRange(context);
+            return context.HasTarget
+                ? IsValidTargetInRange(context.Target)
+                : TryFindTargetInRange(out _);
         }
 
         public bool TryStart(in SkillContext context)
         {
-            if (!CanTrigger(context))
+            if (_animationStateIds.Length == 0 || IsActive || _cooldownTimeRemainingSeconds > 0f)
                 return false;
 
+            UnitEntity target;
+            if (context.HasTarget)
+            {
+                target = context.Target;
+                if (!IsValidTargetInRange(target))
+                    return false;
+            }
+            else if (!TryFindTargetInRange(out target))
+            {
+                return false;
+            }
+
+            _attackTarget = target;
             _activeTimeRemainingSeconds = _durationSeconds;
             _activeTimeElapsedSeconds = 0f;
             _cooldownTimeRemainingSeconds = _config.CooldownSeconds;
@@ -115,8 +129,8 @@ namespace GameLogic.Units.Skills
             AnimationStateId = _animationStateIds[0];
             AnimationVersion++;
 
-            for (int i = 0; i < _hitUnitsByWindow.Length; i++)
-                _hitUnitsByWindow[i].Clear();
+            for (int i = 0; i < _hitAppliedByWindow.Length; i++)
+                _hitAppliedByWindow[i] = false;
 
             return true;
         }
@@ -136,6 +150,9 @@ namespace GameLogic.Units.Skills
                 QueryHitWindows(previousElapsedSeconds, _activeTimeElapsedSeconds);
                 DrawQueryRange(IsInsideHitWindow(_activeTimeElapsedSeconds));
 
+                if (_activeTimeRemainingSeconds <= 0f)
+                    _attackTarget = null;
+
                 while (_animationStageIndex + 1 < _animationStateIds.Length
                        && _activeTimeElapsedSeconds >= _stageEndTimesSeconds[_animationStageIndex])
                 {
@@ -152,6 +169,7 @@ namespace GameLogic.Units.Skills
         public void Stop()
         {
             _activeTimeRemainingSeconds = 0f;
+            _attackTarget = null;
 
 #if UNITY_EDITOR
             MeleeAttackDebugRangeRegistry.Remove(_debugRangeId);
@@ -167,67 +185,37 @@ namespace GameLogic.Units.Skills
             float previousElapsedSeconds,
             float currentElapsedSeconds)
         {
-            if (!CanQueryAttackArea())
-                return;
-
             for (int i = 0; i < _hitWindowStartTimesSeconds.Length; i++)
             {
-                if (currentElapsedSeconds < _hitWindowStartTimesSeconds[i]
+                if (_hitAppliedByWindow[i]
+                    || currentElapsedSeconds < _hitWindowStartTimesSeconds[i]
                     || previousElapsedSeconds > _hitWindowEndTimesSeconds[i])
                 {
                     continue;
                 }
 
-                QueryHitWindow(i);
-            }
-        }
-
-        private void QueryHitWindow(int hitWindowIndex)
-        {
-            QueryAttackArea();
-
-            HashSet<UnitEntity> hitUnits = _hitUnitsByWindow[hitWindowIndex];
-            for (int i = 0; i < _overlapResults.Count; i++)
-            {
-                Collider2D hitCollider = _overlapResults[i];
-                if (!_runtimeContext.UnitQuery.TryGetUnit(hitCollider, out UnitEntity target)
-                    || target == null
-                    || hitUnits.Contains(target)
-                    || !CanAffectTarget(target)
-                    || !target.Attributes.TryGetCurrentValue(
-                        EUnitAttributeType.Health,
-                        out float health)
-                    || health <= 0f)
+                if (IsValidTargetInRange(_attackTarget))
                 {
-                    continue;
+                    _hitAppliedByWindow[i] = true;
+                    ApplyGameEffects(_attackTarget);
                 }
-
-                hitUnits.Add(target);
-                ApplyGameEffects(target);
             }
         }
 
-        private bool CanQueryAttackArea()
+        private bool IsValidTargetInRange(UnitEntity target)
         {
-            return _config.QuerySize.x > 0f
-                   && _config.QuerySize.y > 0f
-                   && _config.HitLayerMask.value != 0
-                   && _runtimeContext.UnitQuery != null;
-        }
-
-        private void QueryAttackArea()
-        {
-            var filter = new ContactFilter2D();
-            filter.SetLayerMask(_config.HitLayerMask);
-            filter.useTriggers = true;
-
-            _overlapResults.Clear();
-            Physics2D.OverlapBox(
-                GetQueryCenter(),
-                _config.QuerySize,
-                0f,
-                filter,
-                _overlapResults);
+            return target != null
+                   && !target.Life.IsDead
+                   && _runtimeContext.UnitQuery != null
+                   && CanAffectTarget(target)
+                   && target.Attributes.TryGetCurrentValue(
+                       EUnitAttributeType.Health,
+                       out float health)
+                   && health > 0f
+                   && _runtimeContext.UnitQuery.IsTargetInAttackRange(
+                       _runtimeContext.Owner,
+                       target,
+                       _config.AttackRange);
         }
 
         private bool CanAffectTarget(UnitEntity target)
@@ -285,21 +273,15 @@ namespace GameLogic.Units.Skills
             return false;
         }
 
-        private Vector2 GetQueryCenter()
-        {
-            Vector2 queryOffset = _config.QueryOffset;
-            queryOffset.x *= _runtimeContext.HorizontalFacingSign;
-
-            return (Vector2)_runtimeContext.OwnerWorldPositionTransform.position + queryOffset;
-        }
-
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private void DrawQueryRange(bool isHitWindowActive)
         {
 #if UNITY_EDITOR
-            if (_runtimeContext.OwnerWorldPositionTransform == null
-                || _config.QuerySize.x <= 0f
-                || _config.QuerySize.y <= 0f)
+            if (_runtimeContext.UnitQuery == null
+                || !_runtimeContext.UnitQuery.TryGetUnitAttackFootprint(
+                    _runtimeContext.Owner,
+                    out Vector2 center,
+                    out float bodyRadius))
             {
                 MeleeAttackDebugRangeRegistry.Remove(_debugRangeId);
                 return;
@@ -307,8 +289,8 @@ namespace GameLogic.Units.Skills
 
             MeleeAttackDebugRangeRegistry.Set(
                 _debugRangeId,
-                GetQueryCenter(),
-                _config.QuerySize,
+                center,
+                bodyRadius + _config.AttackRange,
                 isHitWindowActive);
 #endif
         }

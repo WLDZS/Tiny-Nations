@@ -14,7 +14,6 @@ namespace GameLogic.GameFlow.States
         private readonly ISceneModule _sceneModule;
         private readonly IUIModule _uiModule;
         private readonly Func<bool> _enterDemo;
-        private readonly Func<bool> _enterNavigationTest;
         private int _entryVersion;
 
         /// <summary>场景和菜单均已准备好，可以接受进入关卡的请求。</summary>
@@ -23,13 +22,11 @@ namespace GameLogic.GameFlow.States
         public MainMenuState(
             ISceneModule sceneModule,
             IUIModule uiModule,
-            Func<bool> enterDemo,
-            Func<bool> enterNavigationTest)
+            Func<bool> enterDemo)
         {
             _sceneModule = sceneModule;
             _uiModule = uiModule;
             _enterDemo = enterDemo;
-            _enterNavigationTest = enterNavigationTest;
         }
 
         public override void OnEnter()
@@ -76,7 +73,7 @@ namespace GameLogic.GameFlow.States
             _uiModule.Register<MainMenuView, MainMenuViewModel>(
                 MainMenuViewAddress,
                 EUILayer.Screen,
-                () => new MainMenuViewModel(_enterDemo, _enterNavigationTest));
+                () => new MainMenuViewModel(_enterDemo));
 
             MainMenuView view = await _uiModule.PushScreenAsync<MainMenuView>();
             if (!IsCurrent(entryVersion))

@@ -18,13 +18,8 @@ namespace GameLogic.Units.Skills
         private float _cooldownSeconds = 0.25f;
 
         [SerializeField]
-        private Vector2 _querySize = new Vector2(3f, 3f);
-
-        [SerializeField]
-        private Vector2 _queryOffset;
-
-        [SerializeField]
-        private LayerMask _hitLayerMask = 1 << 7;
+        [Min(0f)]
+        private float _attackRange = 0.5f;
 
         [SerializeField]
         private EUnitTargetRelation _targetRelations = EUnitTargetRelation.Enemy;
@@ -40,11 +35,7 @@ namespace GameLogic.Units.Skills
 
         public float CooldownSeconds => _cooldownSeconds;
 
-        public Vector2 QuerySize => _querySize;
-
-        public Vector2 QueryOffset => _queryOffset;
-
-        public LayerMask HitLayerMask => _hitLayerMask;
+        public float AttackRange => _attackRange;
 
         public EUnitTargetRelation TargetRelations => _targetRelations;
 
@@ -65,27 +56,9 @@ namespace GameLogic.Units.Skills
                 return false;
             }
 
-            if (!IsFiniteNonNegative(_querySize.x)
-                || !IsFiniteNonNegative(_querySize.y)
-                || _querySize.x <= 0f
-                || _querySize.y <= 0f)
+            if (!IsFiniteNonNegative(_attackRange) || _attackRange <= 0f)
             {
-                errorMessage = "近战查询框的宽高必须是大于 0 的有限数值。";
-                return false;
-            }
-
-            if (float.IsNaN(_queryOffset.x)
-                || float.IsInfinity(_queryOffset.x)
-                || float.IsNaN(_queryOffset.y)
-                || float.IsInfinity(_queryOffset.y))
-            {
-                errorMessage = "近战查询框偏移必须是有限数值。";
-                return false;
-            }
-
-            if (_hitLayerMask.value == 0)
-            {
-                errorMessage = "近战命中 LayerMask 不能为空。";
+                errorMessage = "近战攻击范围必须是大于 0 的有限数值。";
                 return false;
             }
 

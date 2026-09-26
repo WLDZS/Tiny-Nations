@@ -84,7 +84,7 @@ namespace GameLogic
                 sceneModule,
                 uiModule,
                 monoModule,
-                () => new NavigationSceneSystems(
+                () => new UnitSceneSystems(
                     gameSystemModule,
                     resourceModule,
                     prefabPoolModule,
@@ -150,14 +150,14 @@ namespace GameLogic
             _unitSpawnPanel = null;
             _debugUnitSystem = unitSystem;
 
-            NavigationSystem navigationSystem = systemModule?.GetSystem<INavigationSystem>() as NavigationSystem;
-            if (unitSystem == null || navigationSystem == null)
+            if (unitSystem == null)
                 return;
 
             IResourceModule resourceModule = GameHub.Ins.GetModule<IResourceModule>();
             IEventModule eventModule = GameHub.Ins.GetModule<IEventModule>();
+            NavigationMap navigationMap = systemModule?.GetSystem<INavigationSystem>()?.Map;
             _unitCombatLog = new UnitCombatLog(eventModule, unitSystem);
-            _unitSpawnPanel = new UnitSpawnPanel(resourceModule, unitSystem, navigationSystem);
+            _unitSpawnPanel = new UnitSpawnPanel(resourceModule, unitSystem, navigationMap);
             _unitSpawnPanel.Start();
         }
 

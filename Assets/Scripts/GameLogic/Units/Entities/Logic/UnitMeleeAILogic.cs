@@ -12,11 +12,11 @@ namespace GameLogic.Units.Common
         private readonly UnitEntity _owner;
         private readonly UnitAIComp _ai;
         private readonly UnitViewComp _view;
-        private readonly UnitNavigationComp _navigation;
         private readonly UnitSkillComp _skills;
         private readonly UnitLifeComp _life;
         private readonly MeleeAttackSkill _attackSkill;
         private readonly IUnitQuery _unitQuery;
+        private readonly UnitNavigationLogic _navigation;
         private float _targetSearchTimeRemainingSeconds;
 
         public override ELogicPhase Phase => ELogicPhase.Command;
@@ -25,59 +25,84 @@ namespace GameLogic.Units.Common
             UnitEntity owner,
             UnitAIComp ai,
             UnitViewComp view,
-            UnitNavigationComp navigation,
             UnitSkillComp skills,
             UnitLifeComp life,
             MeleeAttackSkill attackSkill,
-            IUnitQuery unitQuery)
+            IUnitQuery unitQuery,
+            UnitNavigationLogic navigation)
         {
             _owner = owner;
             _ai = ai;
             _view = view;
-            _navigation = navigation;
             _skills = skills;
             _life = life;
             _attackSkill = attackSkill;
             _unitQuery = unitQuery;
+            _navigation = navigation;
         }
 
         protected override void OnTick(float dt)
         {
             if (_life.IsDead
                 || _view.WorldPositionTransform == null
-                || _unitQuery == null
-                || !TryResolveTarget(
-                    dt,
-                    out Vector3 targetPosition,
-                    out bool targetChanged))
+                || _unitQuery == null)
             {
-                _unitQuery?.ReleaseApproachPosition(_owner);
-                _navigation.ClearDestination();
+                _navigation?.ClearTarget();
+                return;
+            }
+
+            if (_navigation != null && _navigation.HasMoveDestination)
+            {
+                _ai.ClearTarget();
+                return;
+            }
+
+            if (_attackSkill.IsActive)
+            {
+                _navigation?.PauseForAttack();
+                FaceCurrentAttackTarget();
+                return;
+            }
+
+            UnitEntity attackTarget = _ai.Target;
+            bool hasAttackTarget = attackTarget != null
+                                   && _attackSkill.IsTargetInRange(new SkillContext(attackTarget));
+            if (!hasAttackTarget)
+                hasAttackTarget = _attackSkill.TryFindTargetInRange(out attackTarget);
+
+            if (hasAttackTarget
+                && _unitQuery.TryGetUnitWorldPosition(attackTarget, out Vector3 attackTargetPosition))
+            {
+                _ai.SetTarget(attackTarget);
+                _navigation?.SetTarget(attackTarget, _attackSkill.AttackRange);
+                FaceTarget(attackTargetPosition.x - _view.WorldPositionTransform.position.x);
+                if (_navigation == null || _navigation.IsReadyToAttack(attackTarget))
+                {
+                    _navigation?.PauseForAttack();
+                    _skills.TryTrigger(ESkillSlot.Primary, new SkillContext(attackTarget));
+                }
+                return;
+            }
+
+            if (!TryResolveTarget(dt, out Vector3 targetPosition))
+            {
+                _navigation?.ClearTarget();
                 return;
             }
 
             Vector2 targetOffset = targetPosition - _view.WorldPositionTransform.position;
             FaceTarget(targetOffset.x);
-            var context = new SkillContext(_ai.Target);
+            _navigation?.SetTarget(_ai.Target, _attackSkill.AttackRange);
+        }
 
-            if (_attackSkill.IsTargetInRange(context))
+        private void FaceCurrentAttackTarget()
+        {
+            UnitEntity target = _attackSkill.AttackTarget;
+            if (target != null
+                && _unitQuery.TryGetUnitWorldPosition(target, out Vector3 targetPosition))
             {
-                _navigation.ClearDestination();
-                _skills.TryTrigger(ESkillSlot.Primary, context);
-                return;
+                FaceTarget(targetPosition.x - _view.WorldPositionTransform.position.x);
             }
-
-            if (!_unitQuery.TryGetApproachPosition(
-                    _owner, _ai.Target, out Vector3 destination))
-            {
-                _navigation.ClearDestination();
-                return;
-            }
-
-            if (targetChanged)
-                _navigation.BeginDestination(destination);
-            else
-                _navigation.UpdateDestination(destination);
         }
 
         protected override void OnStop()
@@ -85,12 +110,8 @@ namespace GameLogic.Units.Common
             ClearState();
         }
 
-        private bool TryResolveTarget(
-            float dt,
-            out Vector3 targetPosition,
-            out bool targetChanged)
+        private bool TryResolveTarget(float dt, out Vector3 targetPosition)
         {
-            targetChanged = false;
             if (IsTargetValid(out targetPosition))
             {
                 _targetSearchTimeRemainingSeconds = 0f;
@@ -113,7 +134,6 @@ namespace GameLogic.Units.Common
             }
 
             _ai.SetTarget(target);
-            targetChanged = true;
             return IsTargetValid(out targetPosition);
         }
 
@@ -123,7 +143,9 @@ namespace GameLogic.Units.Common
             UnitEntity target = _ai.Target;
             return target != null
                    && !target.Life.IsDead
-                   && _unitQuery.TryGetUnitWorldPosition(target, out targetPosition);
+                   && _unitQuery.TryGetUnitWorldPosition(target, out targetPosition)
+                   && (targetPosition - _view.WorldPositionTransform.position).sqrMagnitude
+                   <= _ai.VisionRange * _ai.VisionRange;
         }
 
         private void FaceTarget(float horizontalDirection)
@@ -139,9 +161,8 @@ namespace GameLogic.Units.Common
 
         private void ClearState()
         {
-            _unitQuery?.ReleaseApproachPosition(_owner);
+            _navigation?.ClearTarget();
             _ai.ClearTarget();
-            _navigation.ClearDestination();
             _targetSearchTimeRemainingSeconds = 0f;
         }
     }

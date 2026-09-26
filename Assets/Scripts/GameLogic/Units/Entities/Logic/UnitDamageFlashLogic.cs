@@ -79,7 +79,11 @@ namespace GameLogic.Units.Common
 
             SpriteRenderer spriteRenderer = _view.SpriteRenderer;
             if (spriteRenderer != null)
-                spriteRenderer.SetPropertyBlock(null);
+            {
+                spriteRenderer.GetPropertyBlock(_propertyBlock);
+                _propertyBlock.SetFloat(FlashAmountId, 0f);
+                spriteRenderer.SetPropertyBlock(_propertyBlock);
+            }
 
             _propertyBlock.Clear();
             _hasFlashOverride = false;

@@ -14,7 +14,6 @@ namespace GameLogic.Units.EditorTools
         private static readonly Color InactiveFillColor = new(1f, 0.75f, 0.05f, 0.2f);
         private static readonly Color InactiveOutlineColor = new(1f, 0.75f, 0.05f, 0.9f);
         private static readonly List<int> StaleRangeIds = new();
-        private static readonly Vector3[] Corners = new Vector3[4];
 
         static MeleeAttackDebugRangeDrawer()
         {
@@ -62,12 +61,6 @@ namespace GameLogic.Units.EditorTools
 
         private static void DrawRange(MeleeAttackDebugRange range)
         {
-            Vector2 halfSize = range.Size * 0.5f;
-            Corners[0] = range.Center + new Vector2(-halfSize.x, -halfSize.y);
-            Corners[1] = range.Center + new Vector2(-halfSize.x, halfSize.y);
-            Corners[2] = range.Center + halfSize;
-            Corners[3] = range.Center + new Vector2(halfSize.x, -halfSize.y);
-
             Color fillColor = range.IsHitWindowActive
                 ? ActiveFillColor
                 : InactiveFillColor;
@@ -75,8 +68,13 @@ namespace GameLogic.Units.EditorTools
                 ? ActiveOutlineColor
                 : InactiveOutlineColor;
             CompareFunction previousZTest = Handles.zTest;
+            Color previousColor = Handles.color;
             Handles.zTest = CompareFunction.Always;
-            Handles.DrawSolidRectangleWithOutline(Corners, fillColor, outlineColor);
+            Handles.color = fillColor;
+            Handles.DrawSolidDisc(range.Center, Vector3.forward, range.Radius);
+            Handles.color = outlineColor;
+            Handles.DrawWireDisc(range.Center, Vector3.forward, range.Radius);
+            Handles.color = previousColor;
             Handles.zTest = previousZTest;
         }
     }

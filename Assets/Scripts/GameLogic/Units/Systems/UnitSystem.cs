@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using BorFramework;
 using Cysharp.Threading.Tasks;
-using GameLogic.Navigation;
 using GameLogic.Units.Common;
 using GameLogic.Units.Skills;
+using GameLogic.Navigation;
 using UnityEngine;
 
 namespace GameLogic.Units
@@ -16,13 +16,12 @@ namespace GameLogic.Units
         private readonly IInputModule _inputModule;
         private readonly IEventModule _eventModule;
         private readonly IMonoModule _monoModule;
-        private readonly INavigationSystem _navigationSystem;
+        private readonly INavigationSystem _navigation;
+        private readonly UnitApproachSlots _approachSlots = new();
         private readonly Dictionary<UnitEntity, UnitRuntime> _units = new();
         private readonly Dictionary<EntityId, UnitEntity> _unitsByRigidbodyEntityId = new();
         private readonly List<UnitEntity> _despawnBuffer = new();
         private readonly List<UnitEntity> _pendingDeathUnits = new();
-        private readonly UnitLocalAvoidance _localAvoidance = new();
-        private readonly UnitApproachSlots _approachSlots = new();
         private bool _started;
         private int _lifecycleVersion;
 
@@ -33,7 +32,7 @@ namespace GameLogic.Units
             IInputModule inputModule,
             IEventModule eventModule,
             IMonoModule monoModule,
-            INavigationSystem navigationSystem)
+            INavigationSystem navigation)
         {
             _resourceModule = resourceModule;
             _prefabPoolModule = prefabPoolModule;
@@ -41,7 +40,7 @@ namespace GameLogic.Units
             _inputModule = inputModule;
             _eventModule = eventModule;
             _monoModule = monoModule;
-            _navigationSystem = navigationSystem;
+            _navigation = navigation;
         }
 
         public void Init()
@@ -76,9 +75,8 @@ namespace GameLogic.Units
                 _monoModule.OnLateUpdate -= OnLateUpdate;
 
             _pendingDeathUnits.Clear();
-            _localAvoidance.Clear();
-            _approachSlots.Clear();
             _despawnBuffer.Clear();
+            _approachSlots.Clear();
             _despawnBuffer.AddRange(_units.Keys);
 
             for (int i = 0; i < _despawnBuffer.Count; i++)
@@ -206,9 +204,9 @@ namespace GameLogic.Units
                 request.TeamId,
                 _inputModule,
                 this,
+                _navigation,
                 this,
                 _eventModule,
-                _navigationSystem,
                 request.UsePlayerInput);
             EntityId? rigidbodyEntityId = rigidbody != null
                 ? rigidbody.GetEntityId()
@@ -243,8 +241,8 @@ namespace GameLogic.Units
             if (unit == null || !_units.Remove(unit, out UnitRuntime runtime))
                 return false;
 
-            _localAvoidance.Remove(unit);
             _approachSlots.Release(unit);
+            _approachSlots.ReleaseTarget(unit);
 
             if (runtime.RigidbodyEntityId.HasValue)
             {
@@ -329,7 +327,7 @@ namespace GameLogic.Units
             if (bodyCollider == null)
                 return;
 
-            // 当前单位只与地图发生身体碰撞；Hurtbox 仍用于单位间技能命中。
+            // 当前单位只与地图发生身体碰撞。
             foreach (UnitRuntime runtime in _units.Values)
             {
                 Collider2D otherBodyCollider = runtime.BodyCollider;
@@ -353,6 +351,38 @@ namespace GameLogic.Units
             return _unitsByRigidbodyEntityId.TryGetValue(
                 rigidbodyEntityId,
                 out unit);
+        }
+
+        internal void CopyActiveUnits(List<UnitEntity> units)
+        {
+            units.Clear();
+            foreach (UnitEntity unit in _units.Keys)
+            {
+                if (!unit.Life.IsDead)
+                    units.Add(unit);
+            }
+        }
+
+        internal bool IsActiveUnit(UnitEntity unit)
+        {
+            return unit != null && !unit.Life.IsDead && _units.ContainsKey(unit);
+        }
+
+        internal bool TryIssueMoveCommand(UnitEntity unit, Vector2 destination)
+        {
+            return _started && IsActiveUnit(unit) && unit.TryMoveTo(destination);
+        }
+
+        internal bool TryGetSelectionRenderer(UnitEntity unit, out SpriteRenderer renderer)
+        {
+            renderer = null;
+            if (!IsActiveUnit(unit)
+                || !_units.TryGetValue(unit, out UnitRuntime runtime)
+                || runtime.Instance == null)
+                return false;
+
+            renderer = runtime.Instance.GetComponentInChildren<SpriteRenderer>(true);
+            return renderer != null && renderer.enabled && renderer.gameObject.activeInHierarchy;
         }
 
         public bool TryGetUnitTransform(UnitEntity unit, out Transform transform)
@@ -383,24 +413,71 @@ namespace GameLogic.Units
             return true;
         }
 
-        public bool TryGetApproachPosition(UnitEntity source, UnitEntity target, out Vector3 position)
+        public bool TryGetUnitAttackFootprint(
+            UnitEntity unit,
+            out Vector2 center,
+            out float radius)
+        {
+            center = default;
+            radius = 0f;
+            if (unit == null
+                || !_units.TryGetValue(unit, out UnitRuntime runtime)
+                || runtime.Instance == null
+                || !runtime.Instance.activeInHierarchy
+                || runtime.WorldPositionTransform == null)
+            {
+                return false;
+            }
+
+            center = runtime.WorldPositionTransform.position;
+            Collider2D bodyCollider = runtime.BodyCollider;
+            if (bodyCollider == null || !bodyCollider.enabled)
+                return true;
+
+            Bounds bounds = bodyCollider.bounds;
+            center = bounds.center;
+            radius = bodyCollider is CircleCollider2D
+                ? Mathf.Max(bounds.extents.x, bounds.extents.y)
+                : bounds.extents.magnitude;
+            return true;
+        }
+
+        public bool IsTargetInAttackRange(
+            UnitEntity source,
+            UnitEntity target,
+            float attackRange)
+        {
+            if (attackRange <= 0f
+                || !TryGetUnitAttackFootprint(source, out Vector2 sourceCenter, out float sourceRadius)
+                || !TryGetUnitAttackFootprint(target, out Vector2 targetCenter, out float targetRadius))
+            {
+                return false;
+            }
+
+            float reach = sourceRadius + attackRange + targetRadius;
+            return (targetCenter - sourceCenter).sqrMagnitude <= reach * reach;
+        }
+
+        public bool TryGetApproachPosition(
+            UnitEntity source,
+            UnitEntity target,
+            float attackRange,
+            out Vector2 position,
+            out bool canAttack)
         {
             position = default;
-            if (source == null
-                || target == null
-                || !_units.TryGetValue(source, out UnitRuntime sourceRuntime)
-                || !_units.TryGetValue(target, out UnitRuntime targetRuntime))
+            canAttack = false;
+            if (source == null || target == null || target.Life.IsDead
+                || _navigation?.Map == null
+                || !TryGetUnitAttackFootprint(source, out Vector2 sourceCenter, out float sourceRadius)
+                || !TryGetUnitAttackFootprint(target, out Vector2 targetCenter, out float targetRadius))
             {
                 return false;
             }
 
             return _approachSlots.TryGetPosition(
-                source,
-                sourceRuntime,
-                target,
-                targetRuntime,
-                _navigationSystem,
-                out position);
+                source, target, sourceCenter, sourceRadius, targetCenter, targetRadius,
+                attackRange, _navigation.Map, out position, out canAttack);
         }
 
         public void ReleaseApproachPosition(UnitEntity source)
@@ -408,9 +485,80 @@ namespace GameLogic.Units
             _approachSlots.Release(source);
         }
 
-        internal bool TryGetApproachSlotIndex(UnitEntity source, out int slotIndex)
+        public Vector2 GetLocalSeparation(UnitEntity source)
         {
-            return _approachSlots.TryGetSlotIndex(source, out slotIndex);
+            if (!TryGetUnitAttackFootprint(source, out Vector2 sourceCenter, out float sourceRadius))
+                return Vector2.zero;
+
+            float sourceCrowdRadius = Mathf.Max(0.22f, sourceRadius);
+            Vector2 separation = Vector2.zero;
+            foreach (UnitEntity other in _units.Keys)
+            {
+                if (other == source || other.Life.IsDead
+                    || !TryGetUnitAttackFootprint(other, out Vector2 otherCenter, out float otherRadius))
+                {
+                    continue;
+                }
+
+                Vector2 offset = sourceCenter - otherCenter;
+                float distance = offset.magnitude;
+                float spacing = sourceCrowdRadius + Mathf.Max(0.22f, otherRadius) + 0.08f;
+                if (distance >= spacing)
+                    continue;
+
+                if (distance < 0.001f)
+                {
+                    EntityId sourceId = _units[source].Instance.GetEntityId();
+                    EntityId otherId = _units[other].Instance.GetEntityId();
+                    offset = sourceId < otherId ? Vector2.left : Vector2.right;
+                    distance = 0f;
+                }
+
+                separation += offset.normalized * ((spacing - distance) / spacing);
+            }
+
+            return Vector2.ClampMagnitude(separation, 1f);
+        }
+
+        public bool TryFindClosestEnemyInAttackRange(
+            UnitEntity source,
+            float attackRange,
+            out UnitEntity unit)
+        {
+            unit = null;
+            if (source == null || attackRange <= 0f
+                || !TryGetUnitAttackFootprint(source, out Vector2 sourceCenter, out float sourceRadius))
+            {
+                return false;
+            }
+
+            float closestGap = float.PositiveInfinity;
+            foreach (KeyValuePair<UnitEntity, UnitRuntime> pair in _units)
+            {
+                UnitEntity candidate = pair.Key;
+                if (candidate == null
+                    || candidate.Life.IsDead
+                    || !candidate.Attributes.TryGetCurrentValue(
+                        EUnitAttributeType.Health,
+                        out float health)
+                    || health <= 0f
+                    || !TryGetRelation(source, candidate, out EUnitRelation relation)
+                    || relation != EUnitRelation.Enemy
+                    || !TryGetUnitAttackFootprint(candidate, out Vector2 targetCenter, out float targetRadius))
+                {
+                    continue;
+                }
+
+                float gap = Mathf.Max(0f,
+                    Vector2.Distance(sourceCenter, targetCenter) - sourceRadius - targetRadius);
+                if (gap > attackRange || gap >= closestGap)
+                    continue;
+
+                closestGap = gap;
+                unit = candidate;
+            }
+
+            return unit != null;
         }
 
 #if DEBUG
@@ -505,7 +653,7 @@ namespace GameLogic.Units
             _pendingDeathUnits.Add(target);
         }
 
-        private void OnLateUpdate(float dt)
+        private void OnLateUpdate(float _)
         {
             if (!_started)
                 return;
@@ -514,8 +662,6 @@ namespace GameLogic.Units
                 Despawn(_pendingDeathUnits[i]);
 
             _pendingDeathUnits.Clear();
-            _localAvoidance.Apply(_units, dt);
         }
-
     }
 }

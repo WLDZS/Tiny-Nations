@@ -13,10 +13,6 @@ namespace GameLogic.Units.Common
 
         public SpriteRenderer SpriteRenderer { get; }
 
-        public float HorizontalFacingSign => SpriteRenderer != null && SpriteRenderer.flipX
-            ? -1f
-            : 1f;
-
         public int CurrentAnimationStateId { get; set; }
 
         public UnitViewComp(
