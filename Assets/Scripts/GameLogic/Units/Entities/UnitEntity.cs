@@ -20,12 +20,17 @@ namespace GameLogic.Units
 
         internal UnitTeamComp Team { get; }
 
+        internal UnitNavigationComp Navigation { get; }
+
+        internal UnitPhysicsComp Physics { get; }
+
         internal UnitGameEffectLogic Effects { get; }
 
         internal UnitDamageFlashLogic DamageFlash { get; }
 
         internal UnitEntity(
             GameObject gameObject,
+            Transform worldPositionTransform,
             Animator animator,
             SpriteRenderer spriteRenderer,
             Rigidbody2D rigidbody,
@@ -47,6 +52,7 @@ namespace GameLogic.Units
 
             var view = new UnitViewComp(
                 gameObject.transform,
+                worldPositionTransform,
                 animator,
                 spriteRenderer);
             view.Entity = this;
@@ -57,6 +63,8 @@ namespace GameLogic.Units
                 physics = new UnitPhysicsComp(rigidbody, bodyCollider);
                 physics.Entity = this;
             }
+
+            Physics = physics;
 
             Attributes = attributes;
             Attributes.Entity = this;
@@ -75,7 +83,7 @@ namespace GameLogic.Units
 
             var skillRuntimeContext = new SkillRuntimeContext(
                 this,
-                gameObject.transform,
+                worldPositionTransform,
                 view,
                 unitQuery,
                 relationResolver);
@@ -97,6 +105,7 @@ namespace GameLogic.Units
             {
                 bool hasSupportedNavigationGeometry = physics == null
                                                       || physics.TryGetNavigationGeometry(
+                                                          worldPositionTransform,
                                                           out navigationAnchorOffset,
                                                           out navigationClearanceRadius);
                 if (!hasSupportedNavigationGeometry)
@@ -114,6 +123,8 @@ namespace GameLogic.Units
                     navigation.Entity = this;
                 }
             }
+
+            Navigation = navigation;
 
             UnitInputLogic inputLogic = null;
             UnitMeleeAILogic meleeAILogic = null;

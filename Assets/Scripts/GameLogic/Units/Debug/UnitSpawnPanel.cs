@@ -1,7 +1,8 @@
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if DEBUG
 using System.Collections.Generic;
 using BorFramework;
 using Cysharp.Threading.Tasks;
+using GameLogic.Navigation;
 using UnityEngine;
 
 namespace GameLogic.Units
@@ -26,7 +27,8 @@ namespace GameLogic.Units
 
         private readonly List<string> _definitionAddresses = new();
         private readonly IResourceModule _resourceModule;
-        private readonly IUnitSystem _unitSystem;
+        private readonly UnitSystem _unitSystem;
+        private readonly UnitWorldDebugOverlay _worldDebugOverlay;
         private Rect _windowRect = new(8f, 8f, 170f, 36f);
         private Rect _collapsedWindowRect = new(8f, 8f, 190f, 36f);
         private Vector2 _scrollPosition;
@@ -38,14 +40,20 @@ namespace GameLogic.Units
         private bool _isRefreshing;
         private bool _isSpawning;
         private bool _usePlayerInput;
+        private bool _showNavigationGrid;
+        private bool _showUnitPositions;
         private string _teamIdText = "2";
         private int _spawnCount;
         private string _statusMessage = string.Empty;
 
-        public UnitSpawnPanel(IResourceModule resourceModule, IUnitSystem unitSystem)
+        public UnitSpawnPanel(
+            IResourceModule resourceModule,
+            UnitSystem unitSystem,
+            NavigationSystem navigationSystem)
         {
             _resourceModule = resourceModule;
             _unitSystem = unitSystem;
+            _worldDebugOverlay = new UnitWorldDebugOverlay(navigationSystem, unitSystem);
         }
 
         private GUIStyle CollapsedLabelStyle
@@ -94,6 +102,7 @@ namespace GameLogic.Units
             if (!_started || _disposed)
                 return;
 
+            _worldDebugOverlay.Draw(_showNavigationGrid, _showUnitPositions);
             if (!_isExpanded)
             {
                 DrawCollapsedWindow();
@@ -118,6 +127,7 @@ namespace GameLogic.Units
         {
             _disposed = true;
             _started = false;
+            _worldDebugOverlay.Dispose();
         }
 
         private void DrawWindow(int windowId)
@@ -141,6 +151,7 @@ namespace GameLogic.Units
                 GUILayout.ExpandHeight(true));
 
             DrawToolbar();
+            DrawDebugButtons();
             _usePlayerInput = GUILayout.Toggle(_usePlayerInput, "生成单位使用玩家输入");
             GUILayout.BeginHorizontal();
             GUILayout.Label("TeamId", GUILayout.Width(60f));
@@ -245,6 +256,20 @@ namespace GameLogic.Units
 
             GUI.enabled = previousEnabled;
             GUILayout.EndHorizontal();
+        }
+
+        private void DrawDebugButtons()
+        {
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button(_showNavigationGrid ? "隐藏寻路网格" : "显示寻路网格"))
+                _showNavigationGrid = !_showNavigationGrid;
+
+            if (GUILayout.Button(_showUnitPositions ? "隐藏单位坐标点" : "显示单位坐标点"))
+                _showUnitPositions = !_showUnitPositions;
+
+            GUILayout.EndHorizontal();
+            if (_showNavigationGrid)
+                GUILayout.Label("绿色：Ground 可走格；红色：Collision 格（未计入单位半径）", StatusStyle);
         }
 
         private string GetCollapsedButtonText()

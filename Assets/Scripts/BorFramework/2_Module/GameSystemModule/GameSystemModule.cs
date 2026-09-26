@@ -75,8 +75,12 @@ namespace BorFramework
                 return;
 
             _started = false;
-            for (int i = _systemOrder.Count - 1; i >= 0; i--)
-                _systemOrder[i].Stop();
+            IGameSystem[] systems = _systemOrder.ToArray();
+            for (int i = systems.Length - 1; i >= 0; i--)
+            {
+                if (_systemOrder.Contains(systems[i]))
+                    systems[i].Stop();
+            }
         }
 
         public void Dispose()

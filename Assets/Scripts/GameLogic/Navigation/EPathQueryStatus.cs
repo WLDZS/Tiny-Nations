@@ -21,6 +21,9 @@ namespace GameLogic.Navigation
         InvalidDestination,
 
         /// <summary>The endpoints are valid, but A* found no connected cell path.</summary>
-        NoPath
+        NoPath,
+
+        /// <summary>The requested destination is unreachable; the path ends at a nearby reachable position.</summary>
+        Approach
     }
 }

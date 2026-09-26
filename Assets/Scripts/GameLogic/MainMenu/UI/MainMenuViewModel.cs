@@ -7,9 +7,12 @@ namespace GameLogic.MainMenu.UI
     {
         private readonly Func<bool> _enterDemo;
 
-        public MainMenuViewModel(Func<bool> enterDemo)
+        private readonly Func<bool> _enterNavigationTest;
+
+        public MainMenuViewModel(Func<bool> enterDemo, Func<bool> enterNavigationTest)
         {
             _enterDemo = enterDemo;
+            _enterNavigationTest = enterNavigationTest;
         }
 
         public override void OnOpen()
@@ -27,6 +30,11 @@ namespace GameLogic.MainMenu.UI
         public bool EnterDemo()
         {
             return _enterDemo != null && _enterDemo();
+        }
+
+        public bool EnterNavigationTest()
+        {
+            return _enterNavigationTest != null && _enterNavigationTest();
         }
     }
 }

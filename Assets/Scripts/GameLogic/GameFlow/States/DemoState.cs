@@ -12,18 +12,19 @@ namespace GameLogic.GameFlow.States
         private const string WarriorBlueDefinitionAddress = "WarriorBlueDefinition";
 
         private readonly ISceneModule _sceneModule;
-        private readonly IUnitSystem _unitSystem;
+        private readonly Func<NavigationSceneSystems> _createSceneSystems;
         private readonly Action _returnToMainMenu;
+        private NavigationSceneSystems _sceneSystems;
         private UnitEntity _playerUnit;
         private int _entryVersion;
 
         public DemoState(
             ISceneModule sceneModule,
-            IUnitSystem unitSystem,
+            Func<NavigationSceneSystems> createSceneSystems,
             Action returnToMainMenu)
         {
             _sceneModule = sceneModule;
-            _unitSystem = unitSystem;
+            _createSceneSystems = createSceneSystems;
             _returnToMainMenu = returnToMainMenu;
         }
 
@@ -37,16 +38,17 @@ namespace GameLogic.GameFlow.States
         {
             _entryVersion++;
 
-            if (_playerUnit == null)
-                return;
+            if (_playerUnit != null)
+                _sceneSystems?.UnitSystem?.Despawn(_playerUnit);
 
-            _unitSystem?.Despawn(_playerUnit);
             _playerUnit = null;
+            _sceneSystems?.Dispose();
+            _sceneSystems = null;
         }
 
         private async UniTask EnterAsync(int entryVersion)
         {
-            if (_sceneModule == null || _unitSystem == null)
+            if (_sceneModule == null || _createSceneSystems == null)
             {
                 FailEntry(entryVersion, "Demo状态进入失败：缺少场景或单位依赖");
                 return;
@@ -68,18 +70,26 @@ namespace GameLogic.GameFlow.States
             if (!IsCurrent(entryVersion))
                 return;
 
+            _sceneSystems = _createSceneSystems();
+            if (_sceneSystems == null || !_sceneSystems.Start())
+            {
+                FailEntry(entryVersion, "Demo场景系统启动失败");
+                return;
+            }
+
             var spawnRequest = new UnitSpawnRequest(
                 WarriorBlueDefinitionAddress,
                 Vector3.zero,
                 Quaternion.identity,
                 1,
                 true);
-            UnitEntity unit = await _unitSystem.SpawnAsync(spawnRequest);
+            IUnitSystem unitSystem = _sceneSystems.UnitSystem;
+            UnitEntity unit = await unitSystem.SpawnAsync(spawnRequest);
 
             if (!IsCurrent(entryVersion))
             {
                 if (unit != null)
-                    _unitSystem.Despawn(unit);
+                    unitSystem.Despawn(unit);
 
                 return;
             }

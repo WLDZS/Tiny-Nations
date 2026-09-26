@@ -10,10 +10,25 @@ namespace GameLogic.Navigation
         private const float ClearanceSampleSpacing = 0.05f;
 
         private readonly Tilemap _groundTilemap;
+#if DEBUG
+        private readonly Tilemap _collisionTilemap;
+#endif
         private readonly Collider2D _collisionCollider;
         private readonly HashSet<Vector3Int> _walkableCells = new();
 
         public bool HasWalkableCells => _walkableCells.Count > 0;
+
+#if DEBUG
+        internal Tilemap GroundTilemap => _groundTilemap;
+
+        internal Tilemap CollisionTilemap => _collisionTilemap;
+
+        internal bool IsBaseWalkable(Vector3Int cell)
+        {
+            cell.z = 0;
+            return _walkableCells.Contains(cell);
+        }
+#endif
 
         public NavigationMap(
             Tilemap groundTilemap,
@@ -21,6 +36,9 @@ namespace GameLogic.Navigation
             Collider2D collisionCollider)
         {
             _groundTilemap = groundTilemap;
+#if DEBUG
+            _collisionTilemap = collisionTilemap;
+#endif
             _collisionCollider = collisionCollider;
 
             BoundsInt bounds = groundTilemap.cellBounds;

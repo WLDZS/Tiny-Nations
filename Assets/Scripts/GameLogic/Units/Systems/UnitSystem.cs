@@ -21,6 +21,8 @@ namespace GameLogic.Units
         private readonly Dictionary<EntityId, UnitEntity> _unitsByRigidbodyEntityId = new();
         private readonly List<UnitEntity> _despawnBuffer = new();
         private readonly List<UnitEntity> _pendingDeathUnits = new();
+        private readonly UnitLocalAvoidance _localAvoidance = new();
+        private readonly UnitApproachSlots _approachSlots = new();
         private bool _started;
         private int _lifecycleVersion;
 
@@ -74,6 +76,8 @@ namespace GameLogic.Units
                 _monoModule.OnLateUpdate -= OnLateUpdate;
 
             _pendingDeathUnits.Clear();
+            _localAvoidance.Clear();
+            _approachSlots.Clear();
             _despawnBuffer.Clear();
             _despawnBuffer.AddRange(_units.Keys);
 
@@ -156,6 +160,12 @@ namespace GameLogic.Units
                 return null;
             }
 
+            Transform worldPositionTransform = instance.transform.Find("WordPos");
+            if (worldPositionTransform == null)
+                worldPositionTransform = instance.transform;
+
+            instance.transform.position += request.Position - worldPositionTransform.position;
+
             Animator animator = instance.GetComponentInChildren<Animator>(true);
             SpriteRenderer spriteRenderer = instance.GetComponentInChildren<SpriteRenderer>(true);
             if (animator == null || spriteRenderer == null)
@@ -186,6 +196,7 @@ namespace GameLogic.Units
 
             var unit = new UnitEntity(
                 instance,
+                worldPositionTransform,
                 animator,
                 spriteRenderer,
                 rigidbody,
@@ -214,6 +225,7 @@ namespace GameLogic.Units
             _units.Add(unit, new UnitRuntime(
                 definitionLease,
                 instance,
+                worldPositionTransform,
                 bodyCollider,
                 rigidbodyEntityId));
 
@@ -230,6 +242,9 @@ namespace GameLogic.Units
         {
             if (unit == null || !_units.Remove(unit, out UnitRuntime runtime))
                 return false;
+
+            _localAvoidance.Remove(unit);
+            _approachSlots.Release(unit);
 
             if (runtime.RigidbodyEntityId.HasValue)
             {
@@ -354,6 +369,66 @@ namespace GameLogic.Units
             return true;
         }
 
+        public bool TryGetUnitWorldPosition(UnitEntity unit, out Vector3 position)
+        {
+            position = default;
+            if (unit == null
+                || !_units.TryGetValue(unit, out UnitRuntime runtime)
+                || runtime.WorldPositionTransform == null)
+            {
+                return false;
+            }
+
+            position = runtime.WorldPositionTransform.position;
+            return true;
+        }
+
+        public bool TryGetApproachPosition(UnitEntity source, UnitEntity target, out Vector3 position)
+        {
+            position = default;
+            if (source == null
+                || target == null
+                || !_units.TryGetValue(source, out UnitRuntime sourceRuntime)
+                || !_units.TryGetValue(target, out UnitRuntime targetRuntime))
+            {
+                return false;
+            }
+
+            return _approachSlots.TryGetPosition(
+                source,
+                sourceRuntime,
+                target,
+                targetRuntime,
+                _navigationSystem,
+                out position);
+        }
+
+        public void ReleaseApproachPosition(UnitEntity source)
+        {
+            _approachSlots.Release(source);
+        }
+
+        internal bool TryGetApproachSlotIndex(UnitEntity source, out int slotIndex)
+        {
+            return _approachSlots.TryGetSlotIndex(source, out slotIndex);
+        }
+
+#if DEBUG
+        internal void CopyDebugUnitPositions(List<Vector3> positions)
+        {
+            positions.Clear();
+            foreach (UnitRuntime runtime in _units.Values)
+            {
+                if (runtime.Instance != null
+                    && runtime.Instance.activeInHierarchy
+                    && runtime.WorldPositionTransform != null)
+                {
+                    positions.Add(runtime.WorldPositionTransform.position);
+                }
+            }
+        }
+#endif
+
         public bool TryFindClosestEnemy(
             UnitEntity source,
             Vector3 origin,
@@ -369,16 +444,18 @@ namespace GameLogic.Units
             {
                 UnitEntity candidate = pair.Key;
                 GameObject instance = pair.Value.Instance;
+                Transform worldPositionTransform = pair.Value.WorldPositionTransform;
                 if (candidate == null
                     || candidate.Life.IsDead
                     || instance == null
+                    || worldPositionTransform == null
                     || !TryGetRelation(source, candidate, out EUnitRelation relation)
                     || relation != EUnitRelation.Enemy)
                 {
                     continue;
                 }
 
-                float distanceSquared = (instance.transform.position - origin).sqrMagnitude;
+                float distanceSquared = (worldPositionTransform.position - origin).sqrMagnitude;
                 if (distanceSquared > closestDistanceSquared)
                     continue;
 
@@ -430,13 +507,14 @@ namespace GameLogic.Units
 
         private void OnLateUpdate(float dt)
         {
-            if (!_started || _pendingDeathUnits.Count == 0)
+            if (!_started)
                 return;
 
             for (int i = 0; i < _pendingDeathUnits.Count; i++)
                 Despawn(_pendingDeathUnits[i]);
 
             _pendingDeathUnits.Clear();
+            _localAvoidance.Apply(_units, dt);
         }
 
     }

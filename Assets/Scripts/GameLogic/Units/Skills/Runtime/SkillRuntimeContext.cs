@@ -9,7 +9,7 @@ namespace GameLogic.Units.Skills
 
         public UnitEntity Owner { get; }
 
-        public Transform OwnerTransform { get; }
+        public Transform OwnerWorldPositionTransform { get; }
 
         public float HorizontalFacingSign => _ownerView?.HorizontalFacingSign ?? 1f;
 
@@ -19,13 +19,13 @@ namespace GameLogic.Units.Skills
 
         public SkillRuntimeContext(
             UnitEntity owner,
-            Transform ownerTransform,
+            Transform ownerWorldPositionTransform,
             UnitViewComp ownerView,
             IUnitQuery unitQuery,
             IUnitRelationResolver relationResolver)
         {
             Owner = owner;
-            OwnerTransform = ownerTransform;
+            OwnerWorldPositionTransform = ownerWorldPositionTransform;
             _ownerView = ownerView;
             UnitQuery = unitQuery;
             RelationResolver = relationResolver;

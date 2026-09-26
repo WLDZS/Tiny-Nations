@@ -5,7 +5,7 @@ namespace BorFramework
         /// <summary>
         /// 成功时接收系统所有权，并按模块当前阶段初始化、启动。
         /// 空、重复类型、重复实例或已释放模块返回 false，不改变既有所有权。
-        /// 注册集合的变更应在系统生命周期回调之外发起。
+        /// 场景系统可动态注册；模块 Stop 时允许系统退出流程移除场景系统。
         /// </summary>
         bool AddSystem<T>(T system) where T : class, IGameSystem;
 

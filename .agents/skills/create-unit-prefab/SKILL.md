@@ -5,7 +5,7 @@ description: Create or update a data-driven Unit prefab in Tiny-Nations, includi
 
 # Create Unit Prefab
 
-适配规范版本：`1.13`
+适配规范版本：`1.14`
 
 Create the requested Unit through the project's existing data-driven ELC pipeline.
 
@@ -27,11 +27,11 @@ Do not rely on a copied asset's serialized values without checking its reference
 1. Determine whether the current generic Unit and skill configurations already express the requested behavior.
 2. Reuse the nearest reference pattern: WarriorBlue for a multi-stage melee presentation, Skull for a single-stage melee presentation.
 3. Create or reuse a valid attribute SO. Every Unit requires Health, MaxHealth, and MoveSpeed; initial Health and MaxHealth must be positive. Mana and MaxMana are an optional pair.
-4. Create the Animator states, skill SOs, foot-anchored presentation Prefab, and `UnitDefinition` described by the specification. When real physical collision is requested, configure the root physics pair and verify physics-driven movement according to the specification. When the Unit must receive damage, verify the manually authored Hurtbox child, its layer, trigger state, and root Rigidbody2D ownership. Configure melee target relations explicitly; ordinary attacks target `Enemy`. Verify that the melee query box is the single source for both actual hit detection and basic melee-AI attack reach.
+4. Create the Animator states, skill SOs, foot-anchored presentation Prefab with a direct empty `WordPos` child, and `UnitDefinition` described by the specification. When real physical collision is requested, configure the root physics pair and verify physics-driven movement according to the specification. When the Unit must receive damage, verify the manually authored Hurtbox child, its layer, trigger state, and root Rigidbody2D ownership. Configure melee target relations explicitly; ordinary attacks target `Enemy`. Verify that the melee query box is the single source for both actual hit detection and basic melee-AI attack reach.
 5. Keep Unit differences in assets and configuration. Do not add Unit-specific Entity, Comp, Logic, Controller, or `MonoBehaviour` when the existing generic pipeline is sufficient.
 6. If a genuinely new capability is required, explain the missing general capability and implement only the smallest reusable extension authorized by the request.
 7. Preserve existing `.meta` files and GUIDs. Keep every project-owned C# type in its own script.
-8. Verify that invalid skills and duplicate slots fail before spawning with a useful diagnostic. Check repeated animation stages restart their state, and that despawning before the first tick or during an update stops and disposes behavior before returning the Prefab. Verify attribute initialization, affected references, compilation, YooAsset discovery, spawning, pooled Prefab reuse and reset, runtime `TeamId`, requested animation sequence, configured skill timing and cooldown behavior, melee query size, AI stopping against that same query box, facing mirror, target relations and hit windows, GameEffect references, fatal damage and deferred death despawn, Scene query visualization, and any requested collision behavior in proportion to the change.
+8. Verify that invalid skills and duplicate slots fail before spawning with a useful diagnostic. Check repeated animation stages restart their state, and that despawning before the first tick or during an update stops and disposes behavior before returning the Prefab. Verify attribute initialization, affected references, compilation, YooAsset discovery, spawning, `WordPos`-based world position and root fallback, pooled Prefab reuse and reset, runtime `TeamId`, requested animation sequence, configured skill timing and cooldown behavior, melee query size, AI stopping against that same query box, facing mirror, target relations and hit windows, GameEffect references, fatal damage and deferred death despawn, Scene query visualization, and any requested collision behavior in proportion to the change.
 
 ## Completion report
 

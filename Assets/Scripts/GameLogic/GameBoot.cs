@@ -14,7 +14,8 @@ namespace GameLogic
         [SerializeField]
         private InputActionAsset _inputActions;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if DEBUG
+        private UnitSystem _debugUnitSystem;
         private UnitSpawnPanel _unitSpawnPanel;
         private UnitCombatLog _unitCombatLog;
 #endif
@@ -79,27 +80,21 @@ namespace GameLogic
             GameHub.Ins.RegisterModule<IUIModule>(uiModule);
             GameHub.Ins.RegisterModule<IGameSystemModule>(gameSystemModule);
 
-            INavigationSystem navigationSystem = new NavigationSystem();
-            var unitSystem = new UnitSystem(
-                resourceModule,
-                prefabPoolModule,
-                entityModule,
-                inputModule,
-                eventModule,
+            gameSystemModule.AddSystem(new GameFlowSystem(
+                sceneModule,
+                uiModule,
                 monoModule,
-                navigationSystem);
-            gameSystemModule.AddSystem<INavigationSystem>(navigationSystem);
-            gameSystemModule.AddSystem<IUnitSystem>(unitSystem);
-            gameSystemModule.AddSystem(new GameFlowSystem(sceneModule, uiModule, monoModule, unitSystem));
+                () => new NavigationSceneSystems(
+                    gameSystemModule,
+                    resourceModule,
+                    prefabPoolModule,
+                    entityModule,
+                    inputModule,
+                    eventModule,
+                    monoModule)));
 
             GameHub.Ins.InitModules();
             GameHub.Ins.StartModules();
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            _unitCombatLog = new UnitCombatLog(eventModule, unitSystem);
-            _unitSpawnPanel = new UnitSpawnPanel(resourceModule, unitSystem);
-            _unitSpawnPanel.Start();
-#endif
 
             var logger = GameHub.Ins.GetModule<ILogModule>();
             logger?.Log("GameHub初始化完成");
@@ -127,6 +122,9 @@ namespace GameLogic
             if (!GameHub.Ins.IsRunning)
                 return;
 
+#if DEBUG
+            RefreshDebugSystems();
+#endif
             GameHub.Ins.GetModule<IMonoModule>()?.DoUpdate(Time.deltaTime);
         }
 
@@ -138,7 +136,31 @@ namespace GameLogic
             GameHub.Ins.GetModule<IMonoModule>()?.DoLateUpdate(Time.deltaTime);
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if DEBUG
+        private void RefreshDebugSystems()
+        {
+            IGameSystemModule systemModule = GameHub.Ins.GetModule<IGameSystemModule>();
+            UnitSystem unitSystem = systemModule?.GetSystem<IUnitSystem>() as UnitSystem;
+            if (_debugUnitSystem == unitSystem)
+                return;
+
+            _unitCombatLog?.Dispose();
+            _unitCombatLog = null;
+            _unitSpawnPanel?.Dispose();
+            _unitSpawnPanel = null;
+            _debugUnitSystem = unitSystem;
+
+            NavigationSystem navigationSystem = systemModule?.GetSystem<INavigationSystem>() as NavigationSystem;
+            if (unitSystem == null || navigationSystem == null)
+                return;
+
+            IResourceModule resourceModule = GameHub.Ins.GetModule<IResourceModule>();
+            IEventModule eventModule = GameHub.Ins.GetModule<IEventModule>();
+            _unitCombatLog = new UnitCombatLog(eventModule, unitSystem);
+            _unitSpawnPanel = new UnitSpawnPanel(resourceModule, unitSystem, navigationSystem);
+            _unitSpawnPanel.Start();
+        }
+
         private void OnGUI()
         {
             _unitSpawnPanel?.Draw();
@@ -150,11 +172,12 @@ namespace GameLogic
             if (Ins != this)
                 return;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if DEBUG
             _unitCombatLog?.Dispose();
             _unitCombatLog = null;
             _unitSpawnPanel?.Dispose();
             _unitSpawnPanel = null;
+            _debugUnitSystem = null;
 #endif
 
             GameHub.Ins.StopModules();

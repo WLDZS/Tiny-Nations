@@ -10,13 +10,14 @@
 GameBoot：应用组合与依赖注入
   ├─ BorFramework：资源、场景、UI、帧循环、事件与生命周期
   └─ GameLogic
-       ├─ GameFlowSystem：菜单与 Demo 状态
-       ├─ NavigationSystem：导航服务
-       └─ UnitSystem：单位生成、查询与回收
+       ├─ GameFlowSystem：菜单、Demo 与导航测试状态
+       └─ NavigationSceneSystems：场景级导航与单位系统
+            ├─ NavigationSystem：导航服务
+            └─ UnitSystem：单位生成、查询与回收
             └─ UnitEntity：直接装配状态和 Logic
 ```
 
-框架不引用具体游戏业务。GameBoot 按依赖顺序创建模块，再按 Navigation、Unit、GameFlow 顺序安装全程业务系统。存档与配置的空壳模块及启动注册已移除；当前没有相应的通用业务 API。
+框架不引用具体游戏业务。GameBoot 按依赖顺序创建模块，只安装全程的 GameFlowSystem；导航和单位 System 由场景状态通过 `NavigationSceneSystems` 安装。存档与配置的空壳模块及启动注册已移除；当前没有相应的通用业务 API。
 
 Entity 的线性装配仍然保留。Component 直接保存在具体实体中并通过构造函数传给 Logic；没有为装配添加 Builder、工厂或依赖注入容器。
 
@@ -44,7 +45,7 @@ Entity 的线性装配仍然保留。Component 直接保存在具体实体中并
 - 按模块当前状态补调 Init 和 Start；整体生命周期仍按注册顺序启动、逆序停止和释放。
 - RemoveSystem 按注册类型删除，先 Stop 再 Dispose，未注册返回 false。
 
-这些接口提供了明确的场景级 System 退出路径；当前全程 Navigation、Unit、GameFlow 仍由 GameBoot 统一安装，不为此额外创建通用场景容器。
+这些接口提供了明确的场景级 System 退出路径；当前 Demo 和 NavigationTest 共用 `NavigationSceneSystems`，在场景加载后安装，在状态退出时移除。具体流程见 [场景系统启动约定](SceneSystemLifecycle.md)。
 
 ### 2.3 UI 导航与异步结果
 

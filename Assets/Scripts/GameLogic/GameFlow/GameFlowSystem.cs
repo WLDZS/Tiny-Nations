@@ -1,6 +1,6 @@
+using System;
 using BorFramework;
 using GameLogic.GameFlow.States;
-using GameLogic.Units;
 using UnityEngine;
 
 namespace GameLogic.GameFlow
@@ -10,7 +10,7 @@ namespace GameLogic.GameFlow
         private readonly ISceneModule _sceneModule;
         private readonly IUIModule _uiModule;
         private readonly IMonoModule _monoModule;
-        private readonly IUnitSystem _unitSystem;
+        private readonly Func<NavigationSceneSystems> _createNavigationSceneSystems;
         private readonly StateMachine _stateMachine = new();
         private MainMenuState _mainMenuState;
         private bool _initialized;
@@ -20,12 +20,12 @@ namespace GameLogic.GameFlow
             ISceneModule sceneModule,
             IUIModule uiModule,
             IMonoModule monoModule,
-            IUnitSystem unitSystem)
+            Func<NavigationSceneSystems> createNavigationSceneSystems)
         {
             _sceneModule = sceneModule;
             _uiModule = uiModule;
             _monoModule = monoModule;
-            _unitSystem = unitSystem;
+            _createNavigationSceneSystems = createNavigationSceneSystems;
         }
 
         public void Init()
@@ -33,9 +33,20 @@ namespace GameLogic.GameFlow
             if (_initialized)
                 return;
 
-            _mainMenuState = new MainMenuState(_sceneModule, _uiModule, EnterDemo);
+            _mainMenuState = new MainMenuState(
+                _sceneModule,
+                _uiModule,
+                EnterDemo,
+                EnterNavigationTest);
             _stateMachine.AddState(_mainMenuState);
-            _stateMachine.AddState(new DemoState(_sceneModule, _unitSystem, ReturnToMainMenu));
+            _stateMachine.AddState(new DemoState(
+                _sceneModule,
+                _createNavigationSceneSystems,
+                ReturnToMainMenu));
+            _stateMachine.AddState(new NavigationTestState(
+                _sceneModule,
+                _createNavigationSceneSystems,
+                ReturnToMainMenu));
             _initialized = true;
         }
 
@@ -78,9 +89,20 @@ namespace GameLogic.GameFlow
             return _stateMachine.ChangeState<DemoState>();
         }
 
+        /// <summary>Accepts a navigation-test entry request only while the main menu is ready.</summary>
+        public bool EnterNavigationTest()
+        {
+            if (!_started || !_stateMachine.IsCurrent<MainMenuState>() || !_mainMenuState.IsReady)
+                return false;
+
+            return _stateMachine.ChangeState<NavigationTestState>();
+        }
+
         private void ReturnToMainMenu()
         {
-            if (_started && _stateMachine.IsCurrent<DemoState>())
+            if (_started
+                && (_stateMachine.IsCurrent<DemoState>()
+                    || _stateMachine.IsCurrent<NavigationTestState>()))
                 _stateMachine.ChangeState<MainMenuState>();
         }
 

@@ -9,12 +9,19 @@ namespace GameLogic.Navigation
     public sealed class NavigationSystem : INavigationSystem
     {
         private const string GridPath = "World/Grid";
+        private const int ApproachSearchRadiusCells = 2;
+        private const int ApproachRefinementSteps = 8;
 
         private readonly GridPathfinder _pathfinder = new();
         private readonly List<Vector3Int> _cellPath = new();
+        private readonly List<Vector3Int> _approachCells = new();
         private NavigationMap _map;
         private Scene _mapScene;
         private bool _started;
+
+#if DEBUG
+        internal NavigationMap DebugMap => _map;
+#endif
 
         public void Init()
         {
@@ -118,12 +125,135 @@ namespace GameLogic.Navigation
                 return status;
             }
 
-            // 内部只处理导航中心，成功后统一还原单位根节点坐标。
+            // 内部只处理导航中心，成功后统一还原单位 WordPos 坐标。
             for (int index = 0; index < waypoints.Count - 1; index++)
                 waypoints[index] -= navigationAnchorOffset;
 
             waypoints[waypoints.Count - 1] = destinationWorldPosition;
             return EPathQueryStatus.Success;
+        }
+
+        public EPathQueryStatus FindApproachPath(
+            Vector2 startWorldPosition,
+            Vector2 destinationWorldPosition,
+            Vector2 navigationAnchorOffset,
+            float clearanceRadius,
+            List<Vector2> waypoints,
+            out Vector2 reachedDestination)
+        {
+            reachedDestination = default;
+            EPathQueryStatus status = FindPath(
+                startWorldPosition,
+                destinationWorldPosition,
+                navigationAnchorOffset,
+                clearanceRadius,
+                waypoints);
+            if (status == EPathQueryStatus.Success)
+            {
+                reachedDestination = destinationWorldPosition;
+                return status;
+            }
+
+            if (status != EPathQueryStatus.InvalidDestination
+                && status != EPathQueryStatus.NoPath)
+            {
+                return status;
+            }
+
+            Vector2 destinationAnchorPosition = destinationWorldPosition + navigationAnchorOffset;
+            Vector3Int destinationCell = _map.WorldToCell(destinationAnchorPosition);
+            _approachCells.Clear();
+            for (int y = -ApproachSearchRadiusCells; y <= ApproachSearchRadiusCells; y++)
+            {
+                for (int x = -ApproachSearchRadiusCells; x <= ApproachSearchRadiusCells; x++)
+                {
+                    Vector3Int cell = destinationCell + new Vector3Int(x, y, 0);
+                    if (_map.IsWalkable(cell, clearanceRadius))
+                        _approachCells.Add(cell);
+                }
+            }
+
+            while (_approachCells.Count > 0)
+            {
+                int closestIndex = FindClosestApproachCellIndex(destinationAnchorPosition);
+                Vector3Int cell = _approachCells[closestIndex];
+                _approachCells.RemoveAt(closestIndex);
+
+                Vector2 cellCenter = _map.GetCellCenterWorld(cell);
+                Vector2 candidateDestination = cellCenter - navigationAnchorOffset;
+                if (FindPath(
+                        startWorldPosition,
+                        candidateDestination,
+                        navigationAnchorOffset,
+                        clearanceRadius,
+                        waypoints) != EPathQueryStatus.Success)
+                {
+                    continue;
+                }
+
+                Vector2 approachPosition = FindClosestSafeApproachPosition(
+                    cell,
+                    cellCenter,
+                    destinationAnchorPosition,
+                    clearanceRadius);
+                reachedDestination = approachPosition - navigationAnchorOffset;
+                if ((reachedDestination - candidateDestination).sqrMagnitude > Mathf.Epsilon)
+                    waypoints.Add(reachedDestination);
+
+                _approachCells.Clear();
+                return EPathQueryStatus.Approach;
+            }
+
+            waypoints.Clear();
+            return status;
+        }
+
+        private int FindClosestApproachCellIndex(Vector2 destinationAnchorPosition)
+        {
+            int bestIndex = 0;
+            float bestDistanceSquared = float.PositiveInfinity;
+            for (int index = 0; index < _approachCells.Count; index++)
+            {
+                Vector2 center = _map.GetCellCenterWorld(_approachCells[index]);
+                float distanceSquared = (center - destinationAnchorPosition).sqrMagnitude;
+                if (distanceSquared >= bestDistanceSquared)
+                    continue;
+
+                bestIndex = index;
+                bestDistanceSquared = distanceSquared;
+            }
+
+            return bestIndex;
+        }
+
+        private Vector2 FindClosestSafeApproachPosition(
+            Vector3Int cell,
+            Vector2 cellCenter,
+            Vector2 destinationAnchorPosition,
+            float clearanceRadius)
+        {
+            float safeFraction = 0f;
+            float unsafeFraction = 1f;
+            for (int index = 0; index < ApproachRefinementSteps; index++)
+            {
+                float candidateFraction = (safeFraction + unsafeFraction) * 0.5f;
+                Vector2 candidate = Vector2.Lerp(
+                    cellCenter,
+                    destinationAnchorPosition,
+                    candidateFraction);
+                if (_map.TryGetWalkableCell(candidate, clearanceRadius, out Vector3Int candidateCell)
+                    && candidateCell == cell
+                    && _map.HasSegmentClearance(cellCenter, candidate, clearanceRadius))
+                {
+                    safeFraction = candidateFraction;
+                }
+                else
+                {
+                    unsafeFraction = candidateFraction;
+                }
+            }
+
+            return Vector2.Lerp(cellCenter, destinationAnchorPosition, safeFraction);
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -335,6 +465,7 @@ namespace GameLogic.Navigation
             _map = null;
             _mapScene = default;
             _cellPath.Clear();
+            _approachCells.Clear();
         }
     }
 }

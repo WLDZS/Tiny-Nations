@@ -46,7 +46,7 @@ namespace GameLogic.Units.EditorTools
             _previewFacingLeft = EditorGUILayout.Toggle("朝向左侧", _previewFacingLeft);
             EditorGUILayout.HelpBox(
                 "蓝色实心区域就是 Physics2D.OverlapBox 的实际查询范围。"
-                + "预览基准为空时，Prefab Mode 使用预制体根节点，普通场景使用世界原点。"
+                + "预览基准为空时，Prefab Mode 优先使用 WordPos，普通场景使用世界原点。"
                 + "Offset 以朝右为基准，勾选朝向左侧会镜像 X 偏移。"
                 + "可在 Scene 中拖动中心与缩放手柄直接修改 Offset 和 Size。",
                 MessageType.Info);
@@ -79,11 +79,22 @@ namespace GameLogic.Units.EditorTools
         private Vector3 ResolvePreviewOrigin()
         {
             if (_previewOrigin != null)
-                return _previewOrigin.position;
+            {
+                Transform worldPositionTransform = _previewOrigin.Find("WordPos");
+                return worldPositionTransform != null
+                    ? worldPositionTransform.position
+                    : _previewOrigin.position;
+            }
 
             PrefabStage prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
             if (prefabStage != null && prefabStage.prefabContentsRoot != null)
-                return prefabStage.prefabContentsRoot.transform.position;
+            {
+                Transform root = prefabStage.prefabContentsRoot.transform;
+                Transform worldPositionTransform = root.Find("WordPos");
+                return worldPositionTransform != null
+                    ? worldPositionTransform.position
+                    : root.position;
+            }
 
             return Vector3.zero;
         }

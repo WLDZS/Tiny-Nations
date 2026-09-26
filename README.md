@@ -1,5 +1,9 @@
 # 小小国家（Tiny Nations）
 
+## 游戏策划
+
+- [RTS 游戏设计总览](Assets/Doc/GameDesign/README.md)：基于现有素材的轻量传统 RTS；15–20 分钟、每方约 20 人、两人 Demo 与最多四人规划，包含素材清单、单位逻辑、经济数值和验收标准。
+
 ## 开发文档
 
 - [AI 协作工作流](AI_WORKFLOW.md)：从需求讨论、代码修改到 Unity 验收的项目级协作流程。

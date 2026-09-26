@@ -18,15 +18,18 @@ namespace GameLogic.Units.Common
         }
 
         public bool TryGetNavigationGeometry(
+            Transform worldPositionTransform,
             out Vector2 navigationAnchorOffset,
             out float clearanceRadius)
         {
             navigationAnchorOffset = Vector2.zero;
             clearanceRadius = 0f;
-            if (!(BodyCollider is CircleCollider2D circleCollider))
+            if (worldPositionTransform == null
+                || !(BodyCollider is CircleCollider2D circleCollider))
                 return false;
 
-            navigationAnchorOffset = BodyCollider.transform.TransformVector(circleCollider.offset);
+            Vector2 colliderCenter = BodyCollider.transform.TransformPoint(circleCollider.offset);
+            navigationAnchorOffset = colliderCenter - (Vector2)worldPositionTransform.position;
             Vector3 worldScale = BodyCollider.transform.lossyScale;
             float largestScale = Mathf.Max(
                 Mathf.Abs(worldScale.x),

@@ -96,13 +96,14 @@ sequenceDiagram
     Unity->>Boot: BeforeSceneLoad 自动创建
     Boot->>Hub: Init()
     Boot->>Hub: RegisterModule<T>()
-    Boot->>Module: AddSystem(Navigation / Unit / GameFlow)
+    Boot->>Module: AddSystem(GameFlow)
     Boot->>Hub: InitModules()
     Hub->>Module: Init()（注册顺序）
     Module->>GameFlow: Init()
     Boot->>Hub: StartModules()
     Hub->>Module: Start()（注册顺序）
     Module->>GameFlow: Start()
+    GameFlow->>Module: 玩法场景加载后 AddSystem(Navigation / Unit)
     Unity->>Boot: Start()
     Boot->>Event: Publish(FrameworkReadyEvent)
     loop 每帧
@@ -359,11 +360,14 @@ flowchart TD
     GameFlow --> MainMenuState["MainMenuState"]
     MainMenuState -->|LoadSceneAsync| MainMenuScene["MainMenu Scene"]
     MainMenuState -->|Register + PushScreenAsync| MainMenuUI["MainMenuView + ViewModel"]
-    MainMenuUI -->|EnterDemo| GameFlow
+    MainMenuUI -->|EnterDemo / EnterNavigationTest| GameFlow
     GameFlow --> DemoState["DemoState"]
     DemoState -->|LoadSceneAsync| DemoScene["Demo Scene"]
+    DemoState -->|安装 Navigation / Unit| DemoScene
     DemoState -->|SpawnAsync| Player["玩家 UnitEntity"]
     DemoState -->|场景或生成失败| MainMenuState
+    GameFlow --> NavigationTestState["NavigationTestState"]
+    NavigationTestState -->|LoadSceneAsync + 安装 Navigation / Unit| NavigationTestScene["NavigationTest Scene"]
 ```
 
 MainMenuState 的进入版本用于忽略退出后的旧结果；状态退出时销毁菜单注册，GameFlow Stop/Start 后可以重新创建菜单。EnterDemo 仅在菜单场景与 View 均就绪时接收请求，返回值不代表 Demo 已加载完成。Demo 加载或玩家生成失败会记录错误并返回菜单。

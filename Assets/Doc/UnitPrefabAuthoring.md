@@ -1,6 +1,6 @@
 # Tiny Nations Unit 预制体制作规范
 
-规范版本：`1.13`
+规范版本：`1.14`
 
 本文规定当前项目中可由 `UnitSystem` 加载、由 ELC 驱动并出现在单位调试面板中的 Unit 资产应如何制作。
 它是 Unit 资产制作的唯一事实来源；项目级 Skill 只负责引导 AI 按本文执行，不复制本文内容。
@@ -76,6 +76,7 @@ Prefab 使用以下表现层级：
 
 ```text
 <UnitName>                # 逻辑根节点，位置在脚底落地点
+├─ WordPos                # 统一世界坐标点；空节点
 ├─ Visual                 # 美术节点，向上偏移到正确视觉位置
 │  ├─ SpriteRenderer
 │  └─ Animator
@@ -90,6 +91,8 @@ Prefab 使用以下表现层级：
 1. Prefab 文件名、根对象名和 `_prefabAddress` 使用同一个稳定的 `<UnitName>`，例如 `Skull`。
 2. `Animator.runtimeAnimatorController` 必须指向该 Unit 的 Controller。
 3. 根对象的位置是单位脚底落地点，`SortingGroup` 使用 `World` Sorting Layer、`Sorting Order = 0`；不要用固定高 Order 让单位永久遮住场景物件。
+   - `WordPos` 是根对象的直接子节点，只保留 `Transform`。默认局部位置为零；需要调整单位的世界坐标判定点时只移动它，不移动根节点修正美术位置。
+   - 生成请求的位置对应 `WordPos`。导航、近战目标搜索、攻击查询和调试坐标点读取 `WordPos.position`；旧 Prefab 没有该子节点时回退到根节点。根节点仍承载移动、刚体和身体碰撞体。
 4. `Visual` 只负责美术偏移和动画，`SpriteRenderer` 应显示 Idle 的有效初始帧，并使用 `World` Sorting Layer、`Sorting Order = 0`。
    - 中心 Pivot 的素材以 Idle 首帧为基准，将“画面中心到脚底接地点”的像素距离除以 PPU，作为 `Visual.localPosition.y`。
    - 偏移量保持在像素网格上，不通过修改逻辑根节点来修正美术位置。
@@ -225,7 +228,7 @@ Resources
 命中判定使用 `Physics2D.OverlapBox`：
 
 - `_querySize` 是世界单位下的方形或矩形宽高，两个分量都必须大于 0；
-- `_queryOffset` 是以单位朝右为基准、相对逻辑根节点的偏移；朝左时运行时自动镜像 X 分量，Y 分量不变；
+- `_queryOffset` 是以单位朝右为基准、相对 `WordPos` 的偏移；缺少 `WordPos` 时相对逻辑根节点。朝左时运行时自动镜像 X 分量，Y 分量不变；
 - `_hitLayerMask` 通常只选择 `UnitHurtbox`；
 - `_targetRelations` 声明允许命中的关系，可组合 `Self`、`Ally`、`Enemy`；普通攻击只配置 `Enemy`；
 - `_hitWindows` 可配置多个“开始时间 + 持续时间”，时间从本次技能开始时计算；
@@ -312,7 +315,7 @@ Resources
 4. 创建或整理 Animator Controller，确保所有配置使用的状态真实存在。
 5. 创建或复用属性 SO，至少配置 MaxHealth、MoveSpeed，以及上限为 MaxHealth 的 Health。
 6. 创建技能 SO；普通攻击按真实表现填写一段或多段 `_animationStages`，并配置方形查询范围、目标关系、命中窗口和命中后 GameEffect。普通攻击默认只命中 `Enemy`。
-7. 创建脚底为逻辑根、带 `SortingGroup` 和 `Visual` 子节点的表现 Prefab，并正确绑定 Sprite 和 Animator Controller；需要真实物理碰撞时，在根节点成对配置 Dynamic `Rigidbody2D` 与非 Trigger 身体 `Collider2D`；需要受击时手动添加 `UnitHurtbox` Layer 的 Trigger 子碰撞体。
+7. 创建脚底为逻辑根、带 `SortingGroup`、空 `WordPos` 和 `Visual` 子节点的表现 Prefab，并正确绑定 Sprite 和 Animator Controller；需要真实物理碰撞时，在根节点成对配置 Dynamic `Rigidbody2D` 与非 Trigger 身体 `Collider2D`；需要受击时手动添加 `UnitHurtbox` Layer 的 Trigger 子碰撞体。
 8. 创建 `Definitions/<UnitName>Definition.asset`，填写 Prefab address、属性、移动动画与技能列表。
 9. 检查 GUID 引用、YooAsset address 唯一性和 Collector 覆盖范围。
 10. 进入开发运行环境，用“YooAsset 单位生成”面板选择 TeamId、刷新列表并生成该 Unit；需要受伤的单位还应验证 Health 归零后只死亡一次并在帧末安全移除。
@@ -354,6 +357,7 @@ Resources
 - [ ] Prefab、Definition、技能 SO 及其引用没有 Missing 或丢失 GUID。
 - [ ] YooAsset address 没有重名。
 - [ ] 根节点位于脚底落地点，带 `SortingGroup`，且根与 `Visual` 都使用 `World` / Order 0 的排序设置。
+- [ ] 根节点有直接子节点 `WordPos`，该节点只有 `Transform`；调整其局部位置后，生成、导航、攻击查询与调试坐标仍以它为准，缺失时回退到根节点。
 - [ ] 需要真实物理碰撞的 Unit 在根节点成对配置 Dynamic `Rigidbody2D` 与非 Trigger 身体 `Collider2D`，移动时没有继续直接修改 Transform。
 
 ## 12. 当前基准文件

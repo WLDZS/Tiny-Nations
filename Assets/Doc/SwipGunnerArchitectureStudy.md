@@ -113,7 +113,7 @@ Tiny-Nations 已经有清楚的全局作用域：
 GameBoot -> GameHub -> 全局 Module
 ```
 
-但场景级和玩法级作用域还没有完整表达。当前 `GameSystemModule` 只能添加 System，不能移除，说明临时业务对象的所有权和退出流程仍不完整。
+评审当时场景级作用域尚未完整表达。2026-09-25 已在 [场景系统启动约定](SceneSystemLifecycle.md) 中落地首个场景级组合：`GameSystemModule` 支持移除 System，Demo 与 NavigationTest 场景进入后安装导航和单位 System，退出时逆序释放。
 
 可以学习作用域思想，但不需要引入 DI 容器。轻量表达可以是：
 
@@ -467,8 +467,8 @@ SwipGunner 敌人数量有限。RTS 大量单位不适合默认使用 GameObject
 | SwipGunner | Tiny-Nations | 本质职责 |
 | --- | --- | --- |
 | ProjectContext | GameBoot + GameHub | 全局组合根 |
-| SceneContext | 当前尚未完整表达 | 场景级作用域 |
-| Installer | GameBoot 中的组装代码 | 创建和连接依赖 |
+| SceneContext | `NavigationSceneSystems` + 对应流程状态 | 场景级作用域 |
+| Installer | GameBoot 与 NavigationSceneSystems 中的组装代码 | 创建和连接依赖 |
 | `IInitializable` | `IModule.Init` / `IGameSystem.Init` | 初始化 |
 | `IDisposable` | `Dispose` | 释放 |
 | SignalBus | EventModule | 跨对象通知 |

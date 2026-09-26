@@ -13,6 +13,7 @@ namespace GameLogic.Units.Common
         private const float ArrivalDistance = 0.05f;
         private const float DestinationRepathCooldownSeconds = 0.25f;
         private const float DestinationChangeDistance = 0.5f;
+        private const float BlockedDestinationChangeDistance = 0.1f;
         private const float StuckRepathDelaySeconds = 0.4f;
         private const float MinimumProgressDistance = 0.03f;
 
@@ -32,8 +33,10 @@ namespace GameLogic.Units.Common
         private float _stuckTimeSeconds;
         private float _progressSampleDistanceToWaypoint;
         private Vector2 _plannedDestination;
+        private Vector2 _pathDestination;
         private Vector2 _waypointApproachStart;
         private EUnitNavigationState _stateBeforePause;
+        private bool _isApproachDestination;
         private bool _issuedMoveIntentLastTick;
 
         public override ELogicPhase Phase => ELogicPhase.Navigation;
@@ -62,13 +65,13 @@ namespace GameLogic.Units.Common
         {
             // 每帧默认停止，只有取得可跟随路径点后才输出方向。
             _command.Clear();
-            if (_life.IsDead || _view.Transform == null || !_navigation.HasDestination)
+            if (_life.IsDead || _view.WorldPositionTransform == null || !_navigation.HasDestination)
             {
                 EnterIdle();
                 return;
             }
 
-            Vector2 currentPosition = _view.Transform.position;
+            Vector2 currentPosition = _view.WorldPositionTransform.position;
             if (_observedRequestVersion != _navigation.RequestVersion)
                 ResetForNewRequest();
 
@@ -117,7 +120,10 @@ namespace GameLogic.Units.Common
                            && HasDestinationChangedEnough();
                 case EUnitNavigationState.Arrived:
                 case EUnitNavigationState.Blocked:
-                    return HasDestinationChangedEnough();
+                    return HasDestinationChangedEnough(
+                        _navigation.State == EUnitNavigationState.Blocked || _isApproachDestination
+                            ? BlockedDestinationChangeDistance
+                            : DestinationChangeDistance);
                 default:
                     return false;
             }
@@ -126,6 +132,7 @@ namespace GameLogic.Units.Common
         private void BuildPath(Vector2 currentPosition)
         {
             _plannedDestination = _navigation.Destination;
+            _isApproachDestination = false;
             if (HasArrivedAtDestination(currentPosition))
             {
                 EnterArrived();
@@ -133,19 +140,23 @@ namespace GameLogic.Units.Common
             }
 
             EPathQueryStatus pathStatus = _navigationSystem != null
-                ? _navigationSystem.FindPath(
+                ? _navigationSystem.FindApproachPath(
                     currentPosition,
                     _plannedDestination,
                     _navigationAnchorOffset,
                     _clearanceRadius,
-                    _waypoints)
+                    _waypoints,
+                    out _pathDestination)
                 : EPathQueryStatus.MapUnavailable;
             _navigation.SetPathQueryStatus(pathStatus);
-            if (pathStatus != EPathQueryStatus.Success)
+            if (pathStatus != EPathQueryStatus.Success
+                && pathStatus != EPathQueryStatus.Approach)
             {
                 EnterBlocked(EUnitNavigationBlockReason.PathQueryFailed);
                 return;
             }
+
+            _isApproachDestination = pathStatus == EPathQueryStatus.Approach;
 
             if (_waypoints.Count == 0)
             {
@@ -166,7 +177,7 @@ namespace GameLogic.Units.Common
             var recoveryReason = EUnitNavigationBlockReason.None;
             if (_waypointIndex >= _waypoints.Count)
             {
-                if (HasArrivedAtDestination(currentPosition))
+                if (HasArrivedAtPosition(currentPosition, _pathDestination))
                 {
                     EnterArrived();
                     return;
@@ -238,6 +249,12 @@ namespace GameLogic.Units.Common
 
         private bool IsStuck(Vector2 currentPosition, float dt)
         {
+            if (_navigation.IsAvoidanceYielding)
+            {
+                ResetProgressSample(currentPosition);
+                return false;
+            }
+
             if (!_issuedMoveIntentLastTick)
             {
                 ResetProgressSample(currentPosition);
@@ -280,16 +297,26 @@ namespace GameLogic.Units.Common
 
         private bool HasDestinationChangedEnough()
         {
+            return HasDestinationChangedEnough(DestinationChangeDistance);
+        }
+
+        private bool HasDestinationChangedEnough(float changeDistance)
+        {
             float destinationChangeDistanceSquared =
-                DestinationChangeDistance * DestinationChangeDistance;
+                changeDistance * changeDistance;
             return (_navigation.Destination - _plannedDestination).sqrMagnitude
                    >= destinationChangeDistanceSquared;
         }
 
         private bool HasArrivedAtDestination(Vector2 currentPosition)
         {
+            return HasArrivedAtPosition(currentPosition, _navigation.Destination);
+        }
+
+        private static bool HasArrivedAtPosition(Vector2 currentPosition, Vector2 destination)
+        {
             float arrivalDistanceSquared = ArrivalDistance * ArrivalDistance;
-            return (currentPosition - _navigation.Destination).sqrMagnitude
+            return (currentPosition - destination).sqrMagnitude
                    <= arrivalDistanceSquared;
         }
 
@@ -329,6 +356,7 @@ namespace GameLogic.Units.Common
         private void EnterIdle()
         {
             ClearPath();
+            _isApproachDestination = false;
             _navigation.SetExecutionState(EUnitNavigationState.Idle);
         }
 
@@ -337,6 +365,7 @@ namespace GameLogic.Units.Common
             _waypoints.Clear();
             _waypointIndex = 0;
             _destinationRepathCooldownRemainingSeconds = 0f;
+            _pathDestination = default;
             _waypointApproachStart = default;
             ResetProgressTracking();
         }

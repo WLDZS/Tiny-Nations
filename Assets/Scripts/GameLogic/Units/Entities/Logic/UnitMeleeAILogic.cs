@@ -44,18 +44,19 @@ namespace GameLogic.Units.Common
         protected override void OnTick(float dt)
         {
             if (_life.IsDead
-                || _view.Transform == null
+                || _view.WorldPositionTransform == null
                 || _unitQuery == null
                 || !TryResolveTarget(
                     dt,
-                    out Transform targetTransform,
+                    out Vector3 targetPosition,
                     out bool targetChanged))
             {
+                _unitQuery?.ReleaseApproachPosition(_owner);
                 _navigation.ClearDestination();
                 return;
             }
 
-            Vector2 targetOffset = targetTransform.position - _view.Transform.position;
+            Vector2 targetOffset = targetPosition - _view.WorldPositionTransform.position;
             FaceTarget(targetOffset.x);
             var context = new SkillContext(_ai.Target);
 
@@ -66,10 +67,17 @@ namespace GameLogic.Units.Common
                 return;
             }
 
+            if (!_unitQuery.TryGetApproachPosition(
+                    _owner, _ai.Target, out Vector3 destination))
+            {
+                _navigation.ClearDestination();
+                return;
+            }
+
             if (targetChanged)
-                _navigation.BeginDestination(targetTransform.position);
+                _navigation.BeginDestination(destination);
             else
-                _navigation.UpdateDestination(targetTransform.position);
+                _navigation.UpdateDestination(destination);
         }
 
         protected override void OnStop()
@@ -79,11 +87,11 @@ namespace GameLogic.Units.Common
 
         private bool TryResolveTarget(
             float dt,
-            out Transform targetTransform,
+            out Vector3 targetPosition,
             out bool targetChanged)
         {
             targetChanged = false;
-            if (IsTargetValid(out targetTransform))
+            if (IsTargetValid(out targetPosition))
             {
                 _targetSearchTimeRemainingSeconds = 0f;
                 return true;
@@ -97,7 +105,7 @@ namespace GameLogic.Units.Common
             _targetSearchTimeRemainingSeconds = TargetSearchIntervalSeconds;
             if (!_unitQuery.TryFindClosestEnemy(
                     _owner,
-                    _view.Transform.position,
+                    _view.WorldPositionTransform.position,
                     _ai.VisionRange,
                     out UnitEntity target))
             {
@@ -106,16 +114,16 @@ namespace GameLogic.Units.Common
 
             _ai.SetTarget(target);
             targetChanged = true;
-            return IsTargetValid(out targetTransform);
+            return IsTargetValid(out targetPosition);
         }
 
-        private bool IsTargetValid(out Transform targetTransform)
+        private bool IsTargetValid(out Vector3 targetPosition)
         {
-            targetTransform = null;
+            targetPosition = default;
             UnitEntity target = _ai.Target;
             return target != null
                    && !target.Life.IsDead
-                   && _unitQuery.TryGetUnitTransform(target, out targetTransform);
+                   && _unitQuery.TryGetUnitWorldPosition(target, out targetPosition);
         }
 
         private void FaceTarget(float horizontalDirection)
@@ -131,6 +139,7 @@ namespace GameLogic.Units.Common
 
         private void ClearState()
         {
+            _unitQuery?.ReleaseApproachPosition(_owner);
             _ai.ClearTarget();
             _navigation.ClearDestination();
             _targetSearchTimeRemainingSeconds = 0f;

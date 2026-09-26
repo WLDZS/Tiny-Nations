@@ -290,14 +290,14 @@ namespace GameLogic.Units.Skills
             Vector2 queryOffset = _config.QueryOffset;
             queryOffset.x *= _runtimeContext.HorizontalFacingSign;
 
-            return (Vector2)_runtimeContext.OwnerTransform.position + queryOffset;
+            return (Vector2)_runtimeContext.OwnerWorldPositionTransform.position + queryOffset;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private void DrawQueryRange(bool isHitWindowActive)
         {
 #if UNITY_EDITOR
-            if (_runtimeContext.OwnerTransform == null
+            if (_runtimeContext.OwnerWorldPositionTransform == null
                 || _config.QuerySize.x <= 0f
                 || _config.QuerySize.y <= 0f)
             {

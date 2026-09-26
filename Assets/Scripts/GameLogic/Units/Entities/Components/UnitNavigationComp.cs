@@ -19,6 +19,13 @@ namespace GameLogic.Units.Common
 
         public EUnitNavigationBlockReason BlockReason { get; private set; }
 
+        public bool IsAvoidanceYielding { get; private set; }
+
+        public void SetAvoidanceYielding(bool isYielding)
+        {
+            IsAvoidanceYielding = isYielding;
+        }
+
         public void BeginDestination(Vector2 destination)
         {
             Destination = destination;
@@ -43,6 +50,7 @@ namespace GameLogic.Units.Common
                 return;
 
             HasDestination = false;
+            IsAvoidanceYielding = false;
             Destination = default;
             RequestVersion++;
         }
@@ -55,7 +63,10 @@ namespace GameLogic.Units.Common
             State = state;
             BlockReason = blockReason;
             if (state == EUnitNavigationState.Idle)
+            {
+                IsAvoidanceYielding = false;
                 LastPathQueryStatus = null;
+            }
         }
 
         public void SetPathQueryStatus(EPathQueryStatus status)
